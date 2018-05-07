@@ -1,0 +1,20 @@
+#include <chrono>
+#include <iostream>
+int main()
+{
+  float sum = 0;
+  const float runs = 500;
+  for (int x = 0; x < runs; ++x)
+  {
+  const auto begin = chrono::high_resolution_clock::now(); // or use steady_clock if high_resolution_clock::is_steady is false
+
+  
+  float millis = chrono::duration<double, milli>(chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - begin).count()).count();
+  cout << "Elapsed time: " << millis << " ms\n";
+  sum += millis;
+  }
+
+  cout << "Average exec time: " << sum/runs << "\n";
+  
+  return 0;
+}

@@ -16,21 +16,6 @@ using namespace bot;
 #include <fstream>
 
 
-void bot::WriteMoveToFile(const int x, const int y, const ACTIONS action)
-{
-  string str = "";
-
-  if (action != NONE)
-  {
-    str += to_string(x) + "," + to_string(y) + "," + to_string(action);
-  }
-
-  ofstream movefile(outputFileName);
-  movefile << str;
-  movefile.close();
-}
-
-
 void bot::ReadGameDetails()
 {
   map_width   = j["gameDetails"]["mapWidth"];
@@ -43,7 +28,6 @@ void bot::ReadGameDetails()
   cost_attack   = j["gameDetails"]["buildingPrices"]["ATTACK"];
   cost_energy   = j["gameDetails"]["buildingPrices"]["ENERGY"];
 }
-
 
 void bot::ReadPlayerDetails()
 {
@@ -68,7 +52,6 @@ void bot::ReadPlayerDetails()
   opponent.hitsTaken  = jo["hitsTaken"];
   opponent.score      = jo["score"];
 }
-
 
 void bot::ReadMap()
 {
@@ -133,7 +116,6 @@ void bot::ReadMap()
 
 }
 
-
 bool bot::InitialiseFromJSON()
 {
   ifstream stateStream(stateFileName);
@@ -169,17 +151,68 @@ void bot::DeleteField()
 }
 
 
+void bot::WriteBestActionToFile()
+{
+  string str = "";
+
+  if (bestAction.action != NONE)
+  {
+    str 
+    += to_string(bestAction.x) + "," 
+    + to_string(bestAction.y) + "," 
+    + to_string(bestAction.action);
+  }
+
+  ofstream movefile(outputFileName);
+  movefile << str;
+  movefile.close();
+}
+
+
+int bot::GetPossibleActions()
+{
+  if (me.energy >= cost_attack)
+  {
+    possibleActions.push_back(BUILD_ATTACK);
+  }
+
+  if (me.energy >= cost_defense)
+  {
+    possibleActions.push_back(BUILD_DEFENSE);
+  }
+
+  if (me.energy >= cost_energy)
+  {
+    possibleActions.push_back(BUILD_ENERGY);
+  }
+
+  return possibleActions.size();
+}
+
+
+void bot::GetBestAction()
+{
+  //AL.
+  //TODO
+}
+
+
 int main()
 {
   if (InitialiseFromJSON() == false)
   {
     return -1;
   }
- 
-  
-  WriteMoveToFile(13, 22, BUILD_ENERGY);
+
+  if (GetPossibleActions() > 0)
+  {
+    GetBestAction();
+  }
+
+  WriteBestActionToFile();
 
   //Don't bother cleaning up
   //DeleteField();
+
   return 0;
 }

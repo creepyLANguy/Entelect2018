@@ -11,6 +11,9 @@
 #define BOT_H
 #include <string>
 
+#include "nlohmann/json.hpp"
+using json = nlohmann::json;
+
 using namespace std;
 
 namespace bot
@@ -21,11 +24,12 @@ namespace bot
   ///////////////////////////////////////
   enum ACTIONS
   {
-    BUILD_DEFENSE = 0,
-    BUILD_ATTACK = 1,
-    BUILD_ENERGY = 2,
 
-    NONE,
+    NONE          = -1,
+    BUILD_DEFENSE = 0,
+    BUILD_ATTACK  = 1,
+    BUILD_ENERGY  = 2,
+
   };
 
   ///////////////////////////////////////
@@ -74,6 +78,13 @@ namespace bot
     vector<BUILDING> buildings;
     vector<MISSILE> missiles;
     string cellOwner;
+  };
+
+  struct BEST_ACTION
+  {
+    int x = -1;
+    int y = -1;
+    ACTIONS action = NONE;
   };
 
   ///////////////////////////////////////
@@ -126,19 +137,29 @@ namespace bot
 
   json j = nullptr;
 
+  vector<ACTIONS> possibleActions;
+
+  BEST_ACTION bestAction;
 
   ///////////////////////////////////////
   //FUNCTIONS 
   ///////////////////////////////////////
 
+  //JSON READERS
   bool InitialiseFromJSON();
   void ReadGameDetails();
   void ReadPlayerDetails();
   void ReadMap();
-  void DeleteField();
-  void WriteMoveToFile(int x, int y, ACTIONS action);
 
+  //FILE OUTPUT
+  void WriteBestActionToFile();
 
+  //CLEANUPS
+  void DeleteField();  
+
+  //GAME LOGIC
+  int GetPossibleActions();
+  void GetBestAction();
 }
 
 #endif // BOT_H
