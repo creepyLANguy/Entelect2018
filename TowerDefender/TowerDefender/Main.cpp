@@ -202,7 +202,7 @@ int main()
   if (InitialiseFromJSON() == false)
   {
     return -1;
-  }
+  } 
 
   if (GetPossibleActions() > 0)
   {
