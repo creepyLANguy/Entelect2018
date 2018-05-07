@@ -7,13 +7,10 @@
 * Written by Altamish Mahomed <gambit318@gmail.com>, May 2018
 */
 
-#include "nlohmann/json.hpp"
-using json = nlohmann::json;
+#include <fstream>
 
 #include "bot.h"
 using namespace bot;
-
-#include <fstream>
 
 
 void bot::ReadGameDetails()
