@@ -190,21 +190,39 @@ void bot::GetActionableRows()
 {
   //AL.
   //TODO
+
+  //If my side of row is not full, add to vector
+  for (int row = 0; row < map_height; ++row)
+  {
+    for (int col = 0; col < (map_width/2); ++col)
+    {
+      //This cell is free to build on,
+      //so add row to list and move onto next row.
+      if (field[row][col].buildings.size() == 0)
+      {
+        actionableRows.push_back(row);
+        break;
+      }
+    }
+  }
 }
 
 
 void bot::GetBestAction()
 {
-
+  //i.e. Which buildings you have enough energy for.
   if (GetPossibleActions() == 0)
   {
     return;
   }
+  
+  //Get all rows that you can actually play on.
+  GetActionableRows();
 
   //AL.
   //TODO
 
-  //Get all rows that you can actually play on.
+  
   //For each playable rows, for each cell, simulate every possible play, for n steps
   //n steps = possibly the length of the map, or rounds remaining (whichever is smaller) OR some other value liek 10 lel
   //keep track of the highest difference in yours vs enemy's score. That is, you will want to know which move maximised the score diff.
