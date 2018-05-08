@@ -186,11 +186,30 @@ int bot::GetPossibleActions()
   return possibleActions.size();
 }
 
-
-void bot::GetBestAction()
+void bot::GetActionableRows()
 {
   //AL.
   //TODO
+}
+
+
+void bot::GetBestAction()
+{
+
+  if (GetPossibleActions() == 0)
+  {
+    return;
+  }
+
+  //AL.
+  //TODO
+
+  //Get all rows that you can actually play on.
+  //For each playable rows, for each cell, simulate every possible play, for n steps
+  //n steps = possibly the length of the map, or rounds remaining (whichever is smaller) OR some other value liek 10 lel
+  //keep track of the highest difference in yours vs enemy's score. That is, you will want to know which move maximised the score diff.
+  //set the best action and return.
+
 }
 
 
@@ -201,10 +220,7 @@ int main()
     return -1;
   } 
 
-  if (GetPossibleActions() > 0)
-  {
-    GetBestAction();
-  }
+  GetBestAction();
 
   WriteBestActionToFile();
 
