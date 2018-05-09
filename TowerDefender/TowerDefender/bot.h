@@ -38,10 +38,10 @@ namespace bot
 
   struct PLAYER
   {
-    int energy = 0;
-    int health = 0;
+    int energy    = 0;
+    int health    = 0;
     int hitsTaken = 0;
-    int score = 0;
+    int score     = 0;
   };
 
   struct BUILDING
@@ -99,36 +99,36 @@ namespace bot
   //MEMBERS 
   ///////////////////////////////////////
 
-  int cost_defense = 30;
-  int health_defense = 20;
-  int constructionTime_defense = 3;
-  char constructedCharacter_defense = 'D';
+  int cost_defense                        = 30;
+  int health_defense                      = 20;
+  int constructionTime_defense            = 3;
+  char constructedCharacter_defense       = 'D';
   char underConstructionCharacter_defense = 'd';
 
-  int cost_attack = 30;
-  int health_attack = 5;
-  int fireRate_attack = 3;
-  int damage_attack = 5;
-  int constructionTime_attack = 1;
-  char constructedCharacter_attack = 'A';
-  char underConstructionCharacter_attack = 'a';
+  int cost_attack                         = 30;
+  int health_attack                       = 5;
+  int fireRate_attack                     = 3;
+  int damage_attack                       = 5;
+  int constructionTime_attack             = 1;
+  char constructedCharacter_attack        = 'A';
+  char underConstructionCharacter_attack  = 'a';
 
-  int cost_energy = 20;
-  int health_energy = 5;
-  int energyGeneratedPerTurn_energy = 3;
-  int constructionTime_energy = 1;
-  char constructedCharacter_energy = 'E';
-  char underConstructionCharacter_energy = 'e';
+  int cost_energy                         = 20;
+  int health_energy                       = 5;
+  int energyGeneratedPerTurn_energy       = 3;
+  int constructionTime_energy             = 1;
+  char constructedCharacter_energy        = 'E';
+  char underConstructionCharacter_energy  = 'e';
 
-  int startingEnergy = 20;
-  int missileSpeed = 1;
-  int missileDamage = 5;
-  int energyPerTurn = 5;
+  int startingEnergy  = 20;
+  int missileSpeed    = 1;
+  int missileDamage   = 5;
+  int energyPerTurn   = 5;
 
-  int map_width = 0;
-  int map_height = 0;
-  int maxTurns = 0;
-  int round = 0;
+  int map_width   = 0;
+  int map_height  = 0;
+  int maxTurns    = 0;
+  int round       = 0;
 
   PLAYER me;
   PLAYER opponent;
@@ -138,6 +138,8 @@ namespace bot
   json j = nullptr;
 
   vector<ACTIONS> possibleActions;
+
+  vector<int> actionableRows;
 
   BEST_ACTION bestAction;
 
@@ -158,8 +160,9 @@ namespace bot
   void DeleteField();  
 
   //GAME LOGIC
-  int GetPossibleActions();
-  void GetBestAction();
+  void  GetBestAction();
+  int   GetPossibleActions();
+  void  GetActionableRows();
 }
 
 #endif // BOT_H
