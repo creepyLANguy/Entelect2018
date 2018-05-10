@@ -167,7 +167,7 @@ namespace bot
   void SetActionableRows();
   void SimulateActionableRows();
   int  SimulateRow(int row, int col, BUILD_ACTIONS action, int steps);
-  void SetMaxScoringActionFromAllActions();
+  void SetBestActionFromAllActions();
 }
 
 #endif // BOT_H

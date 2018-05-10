@@ -209,19 +209,25 @@ void bot::SetActionableRows()
   }
 }
 
-void bot::SetMaxScoringActionFromAllActions()
+void bot::SetBestActionFromAllActions()
 {
-  ACTION maxScoreAction = allActions.front();
+  ACTION tempBestAction = allActions.front();
 
   for (const ACTION action : allActions)
   {
-    if (maxScoreAction.scoreDiff < action.scoreDiff)
+    if (tempBestAction.scoreDiff < action.scoreDiff)
     {
-      maxScoreAction.scoreDiff = action.scoreDiff;
+      tempBestAction.scoreDiff = action.scoreDiff;
+    }
+    else if (tempBestAction.scoreDiff == action.scoreDiff)
+    {
+      //AL.
+      //TODO
+      //IF THE SCORES ARE THE SAME, WHAT's THE NEXT CRITERIA?
     }
   }
   
-  bestAction = maxScoreAction;
+  bestAction = tempBestAction;
 }
 
 //For each playable row, for each cell, simulate every possible action, for n steps.
@@ -283,7 +289,7 @@ void bot::SetBestAction()
   //Run the sim on each actionable row and set a list of actions.
   SimulateActionableRows();
 
-  SetMaxScoringActionFromAllActions();
+  SetBestActionFromAllActions();
 }
 
 
