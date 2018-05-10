@@ -22,9 +22,8 @@ namespace bot
   ///////////////////////////////////////
   //ENUMS 
   ///////////////////////////////////////
-  enum ACTIONS
+  enum BUILD_ACTIONS
   {
-
     NONE          = -1,
     BUILD_DEFENSE = 0,
     BUILD_ATTACK  = 1,
@@ -38,10 +37,10 @@ namespace bot
 
   struct PLAYER
   {
-    int energy    = 0;
-    int health    = 0;
-    int hitsTaken = 0;
-    int score     = 0;
+    int energy    = -1;
+    int health    = -1;
+    int hitsTaken = -1;
+    int score     = -1;
   };
 
   struct BUILDING
@@ -73,18 +72,19 @@ namespace bot
 
   struct CELL
   {
-    int x = 0;
-    int y = 0;
+    int x = -1;
+    int y = -1;
     vector<BUILDING> buildings;
     vector<MISSILE> missiles;
     string cellOwner;
   };
 
-  struct BEST_ACTION
+  struct ACTION
   {
     int x = -1;
     int y = -1;
-    ACTIONS action = NONE;
+    BUILD_ACTIONS buildAction = NONE;
+    int scoreDiff = 0;
   };
 
   ///////////////////////////////////////
@@ -125,10 +125,10 @@ namespace bot
   int missileDamage   = 5;
   int energyPerTurn   = 5;
 
-  int map_width   = 0;
-  int map_height  = 0;
-  int maxTurns    = 0;
-  int round       = 0;
+  int map_width   = -1;
+  int map_height  = -1;
+  int maxTurns    = -1;
+  int round       = -1;
 
   PLAYER me;
   PLAYER opponent;
@@ -137,11 +137,13 @@ namespace bot
 
   json j = nullptr;
 
-  vector<ACTIONS> possibleActions;
+  vector<BUILD_ACTIONS> possibleBuildActions;
 
   vector<int> actionableRows;
 
-  BEST_ACTION bestAction;
+  vector<ACTION> allActions;
+
+  ACTION bestAction;
 
   ///////////////////////////////////////
   //FUNCTIONS 
@@ -160,9 +162,12 @@ namespace bot
   void DeleteField();  
 
   //GAME LOGIC
-  void  GetBestAction();
-  int   GetPossibleActions();
-  void  GetActionableRows();
+  void SetBestAction();
+  void SetPossibleBuildActions();
+  void SetActionableRows();
+  void SimulateActionableRows();
+  int  SimulateRow(int row, int col, BUILD_ACTIONS action, int steps);
+  void SetMaxScoringActionFromAllActions();
 }
 
 #endif // BOT_H

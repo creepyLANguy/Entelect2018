@@ -18,8 +18,15 @@ void bot::ReadGameDetails()
   map_width   = j["gameDetails"]["mapWidth"];
   map_height  = j["gameDetails"]["mapHeight"];
   round       = j["gameDetails"]["round"];
-  //AL.WHAT IS THE MAX NUMBER OF ROUNDS?!?!?!
-  //maxTurns = ;
+  
+  //AL.WHAT ARE THESE VALUES ?!?!
+  /*
+  maxTurns = 
+  startingEnergy = 
+  missileSpeed = 
+  missileDamage = 
+  energyPerTurn = 
+  */
   
   cost_defense  = j["gameDetails"]["buildingPrices"]["DEFENSE"];
   cost_attack   = j["gameDetails"]["buildingPrices"]["ATTACK"];
@@ -152,12 +159,12 @@ void bot::WriteBestActionToFile()
 {
   string str = "";
 
-  if (bestAction.action != NONE)
+  if (bestAction.buildAction != NONE)
   {
     str 
     += to_string(bestAction.x) + "," 
     + to_string(bestAction.y) + "," 
-    + to_string(bestAction.action);
+    + to_string(bestAction.buildAction);
   }
 
   ofstream movefile(outputFileName);
@@ -166,31 +173,26 @@ void bot::WriteBestActionToFile()
 }
 
 
-int bot::GetPossibleActions()
+void bot::SetPossibleBuildActions()
 {
   if (me.energy >= cost_attack)
   {
-    possibleActions.push_back(BUILD_ATTACK);
+    possibleBuildActions.push_back(BUILD_ATTACK);
   }
 
   if (me.energy >= cost_defense)
   {
-    possibleActions.push_back(BUILD_DEFENSE);
+    possibleBuildActions.push_back(BUILD_DEFENSE);
   }
 
   if (me.energy >= cost_energy)
   {
-    possibleActions.push_back(BUILD_ENERGY);
+    possibleBuildActions.push_back(BUILD_ENERGY);
   }
-
-  return possibleActions.size();
 }
 
-void bot::GetActionableRows()
+void bot::SetActionableRows()
 {
-  //AL.
-  //TODO
-
   //If my side of row is not full, add to vector
   for (int row = 0; row < map_height; ++row)
   {
@@ -207,27 +209,81 @@ void bot::GetActionableRows()
   }
 }
 
-
-void bot::GetBestAction()
+void bot::SetMaxScoringActionFromAllActions()
 {
+  ACTION maxScoreAction = allActions.front();
+
+  for (const ACTION action : allActions)
+  {
+    if (maxScoreAction.scoreDiff < action.scoreDiff)
+    {
+      maxScoreAction.scoreDiff = action.scoreDiff;
+    }
+  }
+  
+  bestAction = maxScoreAction;
+}
+
+//For each playable row, for each cell, simulate every possible action, for n steps.
+//n steps = possibly the length of the map, or rounds remaining (whichever is smaller) OR some other value liek 10 lel
+//Keep track of the highest difference in yours vs enemy's score. That is, you will want to know which move maximised the score diff.
+//Set the best action and return.
+void bot::SimulateActionableRows()
+{
+  //AL.
+  //TODO
+  //DETERMINE HOW MANY STEPS WE SHOULD SIMULATE
+  int steps = 0;
+
+  for (int row : actionableRows)
+  {
+    for (int col = 0; col < (map_width / 2); ++col)
+    {
+      for (BUILD_ACTIONS buildAction : possibleBuildActions)
+      {
+        const int scoreDiff = SimulateRow(row, col, buildAction, steps);
+
+        ACTION action;
+        action.x = col;
+        action.y = row;
+        action.buildAction = buildAction;
+        action.scoreDiff = scoreDiff;
+
+        allActions.push_back(action);
+      }
+    }
+  }
+}
+
+//AL.
+//TODO
+int bot::SimulateRow(int row, int col, BUILD_ACTIONS buildAction, int steps)
+{
+  return 0;
+}
+
+void bot::SetBestAction()
+{
+  bestAction.buildAction = NONE;
+
   //i.e. Which buildings you have enough energy for.
-  if (GetPossibleActions() == 0)
+  SetPossibleBuildActions();
+  if (possibleBuildActions.size() == 0)
   {
     return;
   }
   
-  //Get all rows that you can actually play on.
-  GetActionableRows();
+  //Set all rows that you can actually play on.
+  SetActionableRows();
+  if (actionableRows.size() == 0)
+  {
+    return;
+  }
 
-  //AL.
-  //TODO
+  //Run the sim on each actionable row and set a list of actions.
+  SimulateActionableRows();
 
-  
-  //For each playable rows, for each cell, simulate every possible play, for n steps
-  //n steps = possibly the length of the map, or rounds remaining (whichever is smaller) OR some other value liek 10 lel
-  //keep track of the highest difference in yours vs enemy's score. That is, you will want to know which move maximised the score diff.
-  //set the best action and return.
-
+  SetMaxScoringActionFromAllActions();
 }
 
 
@@ -238,7 +294,7 @@ int main()
     return -1;
   } 
 
-  GetBestAction();
+  SetBestAction();
 
   WriteBestActionToFile();
 
