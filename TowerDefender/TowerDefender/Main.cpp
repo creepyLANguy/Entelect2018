@@ -15,42 +15,66 @@ using namespace bot;
 
 void bot::ReadGameDetails()
 {
-  map_width   = j["gameDetails"]["mapWidth"];
-  map_height  = j["gameDetails"]["mapHeight"];
-  round       = j["gameDetails"]["round"];
+  json jg       = j["gameDetails"];
+  map_width     = jg["mapWidth"];
+  map_height    = jg["mapHeight"];
+  round         = jg["round"];
+  energyPerTurn = jg["roundIncomeEnergy"];
   
-  //AL.WHAT ARE THESE VALUES ?!?!
-  /*
-  maxTurns = 
-  startingEnergy = 
-  missileSpeed = 
-  missileDamage = 
-  energyPerTurn = 
-  */
-  
-  cost_defense  = j["gameDetails"]["buildingPrices"]["DEFENSE"];
-  cost_attack   = j["gameDetails"]["buildingPrices"]["ATTACK"];
-  cost_energy   = j["gameDetails"]["buildingPrices"]["ENERGY"];
+  //AL.WHAT ARE THESE VALUES ?!?!  
+  //maxTurns = 
+  //startingEnergy = 
+}
+
+void bot::ReadBuildingStats()
+{
+  json jb                       = j["gameDetails"]["buildingsStats"];
+
+  cost_defense                  = jb["DEFENSE"]["price"];
+  health_defense                = jb["DEFENSE"]["health"];
+  constructionTime_defense      = jb["DEFENSE"]["constructionTime"];
+  constructionScore_defense     = jb["DEFENSE"]["constructionScore"];
+  destroyMultiplier_defense     = jb["DEFENSE"]["destroyMultiplier"];
+
+  cost_attack                   = jb["ATTACK"]["price"];
+  health_attack                 = jb["ATTACK"]["health"];
+  constructionTime_attack       = jb["ATTACK"]["constructionTime"];
+  constructionScore_attack      = jb["ATTACK"]["constructionScore"]; 
+  damage_attack                 = jb["ATTACK"]["weaponDamage"];
+  speed_attack                  = jb["ATTACK"]["weaponSpeed"];
+  cooldown_attack               = jb["ATTACK"]["weaponCooldownPeriod"];
+  destroyMultiplier_attack      = jb["ATTACK"]["destroyMultiplier"];
+
+  cost_energy                   = jb["ENERGY"]["price"];
+  health_energy                 = jb["ENERGY"]["health"];
+  constructionTime_energy       = jb["ENERGY"]["constructionTime"];
+  constructionScore_energy      = jb["ENERGY"]["constructionScore"];
+  energyGeneratedPerTurn_energy = jb["ENERGY"]["energyGeneratedPerTurn"];
+  destroyMultiplier_energy      = jb["ENERGY"]["destroyMultiplier"];
 }
 
 void bot::ReadPlayerDetails()
 {
-  int myJsonIndex = 0;
-  int opponentJsonIndex = 1;
-  const string playerType = j["players"][myJsonIndex]["playerType"].get<string>();
-  if (playerType != "A")
   {
-    myJsonIndex = 1;
-    opponentJsonIndex = 0;
+    /*
+    int myJsonIndex = 0;
+    int opponentJsonIndex = 1;
+    const string playerType = j["players"][myJsonIndex]["playerType"].get<string>();
+    if (playerType != "A")
+    {
+      myJsonIndex = 1;
+      opponentJsonIndex = 0;
+    }
+    */
   }
 
-  json jm       = j["players"][myJsonIndex];
-  me.energy     = jm["energy"];
-  me.health     = jm["health"];
-  me.hitsTaken  = jm["hitsTaken"];
-  me.score      = jm["score"];
+  json jm             = j["players"][0];//myJsonIndex];
+  me.energy           = jm["energy"];
+  me.health           = jm["health"];
+  me.hitsTaken        = jm["hitsTaken"];
+  me.score            = jm["score"];
 
-  json jo             = j["players"][opponentJsonIndex];
+  json jo             = j["players"][1];//opponentJsonIndex];
   opponent.energy     = jo["energy"];
   opponent.health     = jo["health"];
   opponent.hitsTaken  = jo["hitsTaken"];
@@ -135,6 +159,7 @@ bool bot::InitialiseFromJSON()
   }
 
   ReadGameDetails();
+  BuildingStats();
   ReadPlayerDetails();
   ReadMap();
 

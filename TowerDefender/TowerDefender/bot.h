@@ -102,14 +102,19 @@ namespace bot
   int cost_defense                        = 30;
   int health_defense                      = 20;
   int constructionTime_defense            = 3;
+  int constructionScore_defense           = 1;
+  int destroyMultiplier_defense           = 1;
   char constructedCharacter_defense       = 'D';
   char underConstructionCharacter_defense = 'd';
 
   int cost_attack                         = 30;
   int health_attack                       = 5;
-  int fireRate_attack                     = 3;
+  int cooldown_attack                     = 3;
   int damage_attack                       = 5;
+  int speed_attack                        = 1;
   int constructionTime_attack             = 1;
+  int constructionScore_attack            = 1;
+  int destroyMultiplier_attack            = 1;
   char constructedCharacter_attack        = 'A';
   char underConstructionCharacter_attack  = 'a';
 
@@ -117,18 +122,18 @@ namespace bot
   int health_energy                       = 5;
   int energyGeneratedPerTurn_energy       = 3;
   int constructionTime_energy             = 1;
+  int constructionScore_energy            = 1;
+  int destroyMultiplier_energy            = 1;
   char constructedCharacter_energy        = 'E';
   char underConstructionCharacter_energy  = 'e';
 
   int startingEnergy  = 20;
-  int missileSpeed    = 1;
-  int missileDamage   = 5;
   int energyPerTurn   = 5;
 
-  int map_width   = -1;
-  int map_height  = -1;
-  int maxTurns    = -1;
-  int round       = -1;
+  int map_width       = -1;
+  int map_height      = -1;
+  int maxTurns        = -1;
+  int round           = -1;
 
   PLAYER me;
   PLAYER opponent;
@@ -152,6 +157,7 @@ namespace bot
   //JSON READERS
   bool InitialiseFromJSON();
   void ReadGameDetails();
+  void ReadBuildingStats();
   void ReadPlayerDetails();
   void ReadMap();
 
