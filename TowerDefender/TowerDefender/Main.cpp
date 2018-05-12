@@ -168,73 +168,6 @@ bool bot::InitialiseFromJSON()
 }
 
 
-void bot::DeleteField()
-{
-  if (field != nullptr)
-  {
-    for (int row = 0; row < map_height; ++row)
-    {
-      delete[] field[row];
-    }
-    delete[] field;
-  }
-}
-
-
-void bot::WriteBestActionToFile()
-{
-  string str = "";
-
-  if (bestAction.buildAction != NONE)
-  {
-    str 
-    += to_string(bestAction.x) + "," 
-    + to_string(bestAction.y) + "," 
-    + to_string(bestAction.buildAction);
-  }
-
-  ofstream movefile(outputFileName);
-  movefile << str;
-  movefile.close();
-}
-
-
-void bot::SetPossibleBuildActions()
-{
-  if (me.energy >= cost_attack)
-  {
-    possibleBuildActions.push_back(BUILD_ATTACK);
-  }
-
-  if (me.energy >= cost_defense)
-  {
-    possibleBuildActions.push_back(BUILD_DEFENSE);
-  }
-
-  if (me.energy >= cost_energy)
-  {
-    possibleBuildActions.push_back(BUILD_ENERGY);
-  }
-}
-
-void bot::SetActionableRows()
-{
-  //If my side of row is not full, add to vector
-  for (int row = 0; row < map_height; ++row)
-  {
-    for (int col = 0; col < (map_width/2); ++col)
-    {
-      //This cell is free to build on,
-      //so add row to list and move onto next row.
-      if (field[row][col].buildings.size() == 0)
-      {
-        actionableRows.push_back(row);
-        break;
-      }
-    }
-  }
-}
-
 void bot::SetBestActionFromAllActions()
 {
   ACTION tempBestAction = allActions.front();
@@ -254,8 +187,15 @@ void bot::SetBestActionFromAllActions()
       tempBestAction.scoreDiff = action.scoreDiff;
     }
   }
-  
+
   bestAction = tempBestAction;
+}
+
+//AL.
+//TODO
+int bot::SimulateRow(int row, int col, BUILD_ACTIONS buildAction, int steps)
+{
+  return 0;
 }
 
 //For each playable row, for each cell, simulate every possible action, for n steps.
@@ -264,18 +204,14 @@ void bot::SetBestActionFromAllActions()
 //Set the best action and return.
 void bot::SimulateActionableRows()
 {
-  //AL.
-  //TODO
-  //DETERMINE HOW MANY STEPS WE SHOULD SIMULATE
   int stepsToSimulate = map_width;
-  if(maxTurns > 0)
+  if (maxTurns > 0)
   {
     if ((round + stepsToSimulate) > maxTurns)
     {
       stepsToSimulate = (maxTurns - round);
     }
   }
-
 
   for (int row : actionableRows)
   {
@@ -297,11 +233,40 @@ void bot::SimulateActionableRows()
   }
 }
 
-//AL.
-//TODO
-int bot::SimulateRow(int row, int col, BUILD_ACTIONS buildAction, int steps)
+void bot::SetActionableRows()
 {
-  return 0;
+  //If my side of row is not full, add to vector
+  for (int row = 0; row < map_height; ++row)
+  {
+    for (int col = 0; col < (map_width / 2); ++col)
+    {
+      //This cell is free to build on,
+      //so add row to list and move onto next row.
+      if (field[row][col].buildings.size() == 0)
+      {
+        actionableRows.push_back(row);
+        break;
+      }
+    }
+  }
+}
+
+void bot::SetPossibleBuildActions()
+{
+  if (me.energy >= cost_attack)
+  {
+    possibleBuildActions.push_back(BUILD_ATTACK);
+  }
+
+  if (me.energy >= cost_defense)
+  {
+    possibleBuildActions.push_back(BUILD_DEFENSE);
+  }
+
+  if (me.energy >= cost_energy)
+  {
+    possibleBuildActions.push_back(BUILD_ENERGY);
+  }
 }
 
 void bot::SetBestAction()
@@ -314,7 +279,7 @@ void bot::SetBestAction()
   {
     return;
   }
-  
+
   //Set all rows that you can actually play on.
   SetActionableRows();
   if (actionableRows.size() == 0)
@@ -326,6 +291,37 @@ void bot::SetBestAction()
   SimulateActionableRows();
 
   SetBestActionFromAllActions();
+}
+
+
+void bot::WriteBestActionToFile()
+{
+  string str = "";
+
+  if (bestAction.buildAction != NONE)
+  {
+    str
+      += to_string(bestAction.x) + ","
+      + to_string(bestAction.y) + ","
+      + to_string(bestAction.buildAction);
+  }
+
+  ofstream movefile(outputFileName);
+  movefile << str;
+  movefile.close();
+}
+
+
+void bot::DeleteField()
+{
+  if (field != nullptr)
+  {
+    for (int row = 0; row < map_height; ++row)
+    {
+      delete[] field[row];
+    }
+    delete[] field;
+  }
 }
 
 

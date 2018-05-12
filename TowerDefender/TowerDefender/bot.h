@@ -9,6 +9,7 @@
 
 #ifndef BOT_H
 #define BOT_H
+
 #include <string>
 
 #include "nlohmann/json.hpp"
