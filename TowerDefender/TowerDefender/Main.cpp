@@ -159,7 +159,7 @@ bool bot::InitialiseFromJSON()
   }
 
   ReadGameDetails();
-  BuildingStats();
+  ReadBuildingStats();
   ReadPlayerDetails();
   ReadMap();
 
