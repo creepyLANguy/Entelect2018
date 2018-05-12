@@ -2,6 +2,7 @@
 Entelect Challenge 2018 - Tower Defense Bot
 
 Copyright (C) Altamish Mahomed - All Rights Reserved
+
 Unauthorized copying of this file or its contents, via any medium, is strictly prohibited, regardless of intent of use.
 Proprietary and confidential.
 
