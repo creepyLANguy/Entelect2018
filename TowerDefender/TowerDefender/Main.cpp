@@ -21,7 +21,8 @@ void bot::ReadGameDetails()
   round         = jg["round"];
   energyPerTurn = jg["roundIncomeEnergy"];
   
-  //AL.WHAT ARE THESE VALUES ?!?!  
+  //AL.WHAT ARE THESE VALUES ?!?! 
+  //TODO
   //maxTurns = 
   //startingEnergy = 
 }
@@ -249,6 +250,8 @@ void bot::SetBestActionFromAllActions()
       //AL.
       //TODO
       //IF THE SCORES ARE THE SAME, WHAT's THE NEXT CRITERIA?
+      //Just take latest choice for now.
+      tempBestAction.scoreDiff = action.scoreDiff;
     }
   }
   
@@ -264,7 +267,15 @@ void bot::SimulateActionableRows()
   //AL.
   //TODO
   //DETERMINE HOW MANY STEPS WE SHOULD SIMULATE
-  int steps = 0;
+  int stepsToSimulate = map_width;
+  if(maxTurns > 0)
+  {
+    if ((round + stepsToSimulate) > maxTurns)
+    {
+      stepsToSimulate = (maxTurns - round);
+    }
+  }
+
 
   for (int row : actionableRows)
   {
@@ -272,7 +283,7 @@ void bot::SimulateActionableRows()
     {
       for (BUILD_ACTIONS buildAction : possibleBuildActions)
       {
-        const int scoreDiff = SimulateRow(row, col, buildAction, steps);
+        const int scoreDiff = SimulateRow(row, col, buildAction, stepsToSimulate);
 
         ACTION action;
         action.x = col;
