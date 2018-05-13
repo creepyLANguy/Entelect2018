@@ -164,7 +164,7 @@
             "speed":1,
             "x":4,
             "y":0,
-            "playerType":"A"
+            "playerType":"B"
           }
         ],
         "cellOwner":"B"
@@ -636,7 +636,27 @@
           }
         ],
         "missiles":[
-
+          {
+            "damage":5,
+            "speed":1,
+            "x":3,
+            "y":2,
+            "playerType":"A"
+          },
+		 {
+            "damage":5,
+            "speed":1,
+            "x":3,
+            "y":2,
+            "playerType":"B"
+          },
+		 {
+            "damage":5,
+            "speed":1,
+            "x":3,
+            "y":2,
+            "playerType":"B"
+          }
         ],
         "cellOwner":"A"
       },

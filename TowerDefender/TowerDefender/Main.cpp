@@ -8,10 +8,14 @@
 */
 
 #include <fstream>
+#include <iostream>
 
 #include "bot.h"
 using namespace bot;
 
+/////////////////
+//JSON READERS//
+///////////////
 
 void bot::ReadGameDetails()
 {
@@ -167,6 +171,10 @@ bool bot::InitialiseFromJSON()
 }
 
 
+///////////////
+//GAME LOGIC//
+/////////////
+
 void bot::SetBestActionFromAllActions()
 {
   ACTION tempBestAction = allActions.front();
@@ -292,6 +300,9 @@ void bot::SetBestAction()
   SetBestActionFromAllActions();
 }
 
+////////////////
+//FILE OUTPUT//
+//////////////
 
 void bot::WriteBestActionToFile()
 {
@@ -310,6 +321,9 @@ void bot::WriteBestActionToFile()
   movefile.close();
 }
 
+/////////////
+//CLEANUPS//
+///////////
 
 void bot::DeleteField()
 {
@@ -323,6 +337,57 @@ void bot::DeleteField()
   }
 }
 
+//////////
+//UTILS//
+////////
+
+void bot::Print()
+{
+  for (int row = 0; row < map_height; ++row)
+  {
+    for (int col = 0; col < map_width ; ++col)
+    {
+      CELL c = field[row][col];
+      
+      string buildingsString = "_";
+      for (BUILDING b : c.buildings)
+      {
+        //AL. 
+        //WTF BROKEN
+        if (b.buildingType.length()>0)
+        {
+          buildingsString = b.buildingType[0];
+        }
+      }
+
+      string misslesString = "";
+      for (MISSILE m : c.missiles)
+      {
+        if (m.missileOwner == "A")
+        {
+          misslesString += ">";
+        }
+        else if (m.missileOwner == "B")
+        {
+          misslesString+="<";
+        }
+      }
+
+      cout << " " << "[";
+      //cout << " " << "x:" << c.x << "y:" << c.y;
+      //cout << " " << "row:" << row << "col:" << col;
+      cout << " " << buildingsString;
+      //cout << " " << misslesString;
+      cout << " " << "]";
+    }
+    cout << endl;
+  }
+}
+
+
+/////////
+//MAIN//
+///////
 
 int main()
 {
@@ -330,6 +395,7 @@ int main()
   {
     return -1;
   } 
+  //Print();
 
   SetBestAction();
 

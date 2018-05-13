@@ -174,6 +174,10 @@ namespace bot
   void SimulateActionableRows();
   int  SimulateRow(int row, int col, BUILD_ACTIONS action, int steps);
   void SetBestActionFromAllActions();
+
+  //UTILS
+  void Print();
+
 }
 
 #endif // BOT_H
