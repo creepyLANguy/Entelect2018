@@ -23,8 +23,7 @@ void bot::ReadGameDetails()
   
   //AL.WHAT ARE THESE VALUES ?!?! 
   //TODO
-  //maxTurns = 
-  //startingEnergy = 
+  //maxTurns =  
 }
 
 void bot::ReadBuildingStats()

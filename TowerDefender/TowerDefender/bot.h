@@ -128,7 +128,6 @@ namespace bot
   char constructedCharacter_energy        = 'E';
   char underConstructionCharacter_energy  = 'e';
 
-  int startingEnergy  = 20;
   int energyPerTurn   = 5;
 
   int map_width       = -1;
