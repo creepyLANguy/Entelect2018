@@ -8,7 +8,10 @@
 */
 
 #include <fstream>
+
+#ifdef DEBUG
 #include <iostream>
+#endif
 
 #include "bot.h"
 using namespace bot;
@@ -341,6 +344,7 @@ void bot::DeleteField()
 //UTILS//
 ////////
 
+#ifdef DEBUG
 void bot::Print()
 {
   for (int row = 0; row < map_height; ++row)
@@ -383,7 +387,7 @@ void bot::Print()
     cout << endl;
   }
 }
-
+#endif
 
 /////////
 //MAIN//
