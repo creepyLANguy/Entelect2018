@@ -356,8 +356,6 @@ void bot::Print()
       string buildingsString = "_";
       for (BUILDING b : c.buildings)
       {
-        //AL. 
-        //WTF BROKEN
         if (b.buildingType.length()>0)
         {
           buildingsString = b.buildingType[0];
