@@ -23,7 +23,11 @@ namespace bot
   ///////////////////////////////////////
   enum BUILD_ACTIONS
   {
+    WAIT_ENERGY   = -1111,
+    WAIT_DEFENSE  = -111,
+    WAIT_ATTACK   = -11,
     NONE          = -1,
+
     BUILD_DEFENSE = 0,
     BUILD_ATTACK  = 1,
     BUILD_ENERGY  = 2,

@@ -205,7 +205,23 @@ void bot::SetBestActionFromAllActions()
 //TODO
 int bot::SimulateRow(int row, int col, BUILD_ACTIONS buildAction, int steps)
 {
-  return 0;
+  int simulatedScore = 0;
+  
+  /*
+  copyoffield = createcopyoffield();
+
+  if (buildAction < NONE)
+  {
+    simulatedScore += RunSteps(amountOfStepsWeNeedToWaitToBuildSpecificBuildingTypem, copyoffield);
+    steps -= amountOfStepsWeNeedToWaitToBuildSpecificBuildingType;
+  }
+
+  BuildOnField(int row, int col, BUILD_ACTIONS buildAction, copyoffield);
+
+  simulatedScore += RunSteps(amountOfStepsWeNeedToWaitToBuildSpecificBuildingType, copyoffield);
+  */
+
+  return simulatedScore;
 }
 
 //For each playable row, for each cell, simulate every possible action, for n steps.
@@ -263,17 +279,29 @@ void bot::SetActionableRows()
 
 void bot::SetPossibleBuildActions()
 {
-  if (me.energy >= cost_attack)
+  if (me.energy < cost_attack)
+  {
+    possibleBuildActions.push_back(WAIT_ATTACK);
+  }
+  else
   {
     possibleBuildActions.push_back(BUILD_ATTACK);
   }
 
-  if (me.energy >= cost_defense)
+  if (me.energy < cost_defense)
+  {
+    possibleBuildActions.push_back(WAIT_DEFENSE);
+  }
+  else
   {
     possibleBuildActions.push_back(BUILD_DEFENSE);
   }
 
-  if (me.energy >= cost_energy)
+  if (me.energy < cost_energy)
+  {
+    possibleBuildActions.push_back(WAIT_ENERGY);
+  }
+  else
   {
     possibleBuildActions.push_back(BUILD_ENERGY);
   }
@@ -297,6 +325,14 @@ void bot::SetBestAction()
     return;
   }
 
+  
+  //AL.
+  //TODO
+  //Consider randomising the order of actionable rows so bot isn't too 
+  //predictable if you have to restrict simulation time. 
+  //RandomiseActionableRows();
+
+
   //Run the sim on each actionable row and set a list of actions.
   SimulateActionableRows();
 
@@ -311,7 +347,7 @@ void bot::WriteBestActionToFile()
 {
   string str = "";
 
-  if (bestAction.buildAction != NONE)
+  if (bestAction.buildAction > NONE)
   {
     str
       += to_string(bestAction.x) + ","
