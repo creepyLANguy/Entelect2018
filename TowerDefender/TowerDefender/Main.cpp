@@ -180,6 +180,13 @@ bool bot::InitialiseFromJSON()
 
 void bot::SetBestActionFromAllActions()
 {
+
+
+  //AL.
+  //TODO
+  //TAKE resultsInDeath_Me and resultsInDeath_Opponent into account
+
+
   ACTION tempBestAction = allActions.front();
 
   for (const ACTION action : allActions)
@@ -203,7 +210,7 @@ void bot::SetBestActionFromAllActions()
 
 //AL.
 //TODO
-int bot::SimulateRow(int row, int col, BUILD_ACTIONS buildAction, int steps)
+void bot::SimulateAction(ACTION& action, int steps)
 {
   int simulatedScore = 0;
   
@@ -221,7 +228,7 @@ int bot::SimulateRow(int row, int col, BUILD_ACTIONS buildAction, int steps)
   simulatedScore += RunSteps(amountOfStepsWeNeedToWaitToBuildSpecificBuildingType, copyoffield);
   */
 
-  return simulatedScore;
+  action.scoreDiff = simulatedScore;
 }
 
 //For each playable row, for each cell, simulate every possible action, for n steps.
@@ -243,15 +250,13 @@ void bot::SimulateActionableRows()
   {
     for (int col = 0; col < (map_width / 2); ++col)
     {
-      for (BUILD_ACTIONS buildAction : possibleBuildActions)
+      for (BUILD_ACTION buildAction : possibleBuildActions)
       {
-        const int scoreDiff = SimulateRow(row, col, buildAction, stepsToSimulate);
-
         ACTION action;
         action.x = col;
         action.y = row;
         action.buildAction = buildAction;
-        action.scoreDiff = scoreDiff;
+        SimulateAction(action, stepsToSimulate);
 
         allActions.push_back(action);
       }

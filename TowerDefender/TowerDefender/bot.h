@@ -21,7 +21,7 @@ namespace bot
   ///////////////////////////////////////
   //ENUMS 
   ///////////////////////////////////////
-  enum BUILD_ACTIONS
+  enum BUILD_ACTION
   {
     WAIT_ENERGY   = -1111,
     WAIT_DEFENSE  = -111,
@@ -86,8 +86,10 @@ namespace bot
   {
     int x = -1;
     int y = -1;
-    BUILD_ACTIONS buildAction = NONE;
+    BUILD_ACTION buildAction = NONE;
     int scoreDiff = 0;
+    bool resultsInDeath_Me = false;
+    bool resultsInDeath_Opponent = false;
   };
 
   ///////////////////////////////////////
@@ -144,7 +146,7 @@ namespace bot
 
   json j = nullptr;
 
-  vector<BUILD_ACTIONS> possibleBuildActions;
+  vector<BUILD_ACTION> possibleBuildActions;
 
   vector<int> actionableRows;
 
@@ -174,7 +176,7 @@ namespace bot
   void SetPossibleBuildActions();
   void SetActionableRows();
   void SimulateActionableRows();
-  int  SimulateRow(int row, int col, BUILD_ACTIONS action, int steps);
+  void SimulateAction(ACTION& action, int steps);
   void SetBestActionFromAllActions();
 
   //UTILS
