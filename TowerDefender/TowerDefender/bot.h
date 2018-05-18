@@ -175,6 +175,7 @@ namespace bot
   void SetBestAction();
   void SetPossibleBuildActions();
   void SetActionableRows();
+  void RandomiseActionableRows();
   void SimulateActionableRows();
   void SimulateAction(ACTION& action, int steps);
   void SetBestActionFromAllActions();

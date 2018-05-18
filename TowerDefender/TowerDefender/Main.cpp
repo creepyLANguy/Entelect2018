@@ -7,6 +7,7 @@
 * Written by Altamish Mahomed <gambit318@gmail.com>, May 2018
 */
 
+#include <random>
 #include <fstream>
 
 #ifdef DEBUG
@@ -264,6 +265,13 @@ void bot::SimulateActionableRows()
   }
 }
 
+void bot::RandomiseActionableRows()
+{
+  random_device rd;
+  mt19937 g(rd());
+  shuffle(actionableRows.begin(), actionableRows.end(), g);
+}
+
 void bot::SetActionableRows()
 {
   //If my side of row is not full, add to vector
@@ -330,13 +338,9 @@ void bot::SetBestAction()
     return;
   }
 
-  
-  //AL.
-  //TODO
-  //Consider randomising the order of actionable rows so bot isn't too 
-  //predictable if you have to restrict simulation time. 
-  //RandomiseActionableRows();
-
+  //Randomise order of actionable rows so bot isn't too predictable 
+  //Helps if cannot simulate all rows and bot stops at same point each turn.
+  RandomiseActionableRows();
 
   //Run the sim on each actionable row and set a list of actions.
   SimulateActionableRows();
@@ -385,9 +389,9 @@ void bot::DeleteField()
 //UTILS//
 ////////
 
-#ifdef DEBUG
 void bot::Print()
 {
+#ifdef DEBUG
   for (int row = 0; row < map_height; ++row)
   {
     for (int col = 0; col < map_width ; ++col)
@@ -425,8 +429,8 @@ void bot::Print()
     }
     cout << endl;
   }
-}
 #endif
+}
 
 /////////
 //MAIN//
@@ -437,8 +441,9 @@ int main()
   if (InitialiseFromJSON() == false)
   {
     return -1;
-  } 
-  //Print();
+  }
+
+  Print();
 
   SetBestAction();
 
