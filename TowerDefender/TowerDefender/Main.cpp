@@ -24,14 +24,18 @@ using namespace bot;
 void bot::ReadGameDetails()
 {
   json jg       = j["gameDetails"];
+
   map_width     = jg["mapWidth"];
   map_height    = jg["mapHeight"];
   round         = jg["round"];
   energyPerTurn = jg["roundIncomeEnergy"];
+
+  kRowByteSize = map_width * sizeof(CELL);
   
   //AL.WHAT ARE THESE VALUES ?!?! 
   //TODO
   //maxTurns =  
+
 }
 
 void bot::ReadBuildingStats()
@@ -154,7 +158,7 @@ void bot::ReadMap()
 
 bool bot::InitialiseFromJSON()
 {
-  ifstream stateStream(stateFileName);
+  ifstream stateStream(kStateFileName);
   if (!stateStream)
   {
     return false;
@@ -182,10 +186,9 @@ bool bot::InitialiseFromJSON()
 void bot::SetBestActionFromAllActions()
 {
 
-
   //AL.
   //TODO
-  //TAKE resultsInDeath_Me and resultsInDeath_Opponent into account
+  //TAKE resultsInDeath_Me AND resultsInDeath_Opponent INTO ACCOUNT
 
 
   ACTION tempBestAction = allActions.front();
@@ -209,25 +212,55 @@ void bot::SetBestActionFromAllActions()
   bestAction = tempBestAction;
 }
 
+void bot::CreateCopyOfField()
+{
+  fieldCopy = new CELL*[map_height];
+  for (int i = 0; i < map_height; ++i)
+  {
+    fieldCopy[i] = new CELL[map_width];
+    memcpy(fieldCopy[i], field[i], kRowByteSize);
+  }
+}
+
 //AL.
 //TODO
 void bot::SimulateAction(ACTION& action, int steps)
 {
-  int simulatedScore = 0;
-  
-  /*
-  copyoffield = createcopyoffield();
+  //Create a copy of the field for editing. 
+  CreateCopyOfField();
 
-  if (buildAction < NONE)
-  {
-    simulatedScore += RunSteps(amountOfStepsWeNeedToWaitToBuildSpecificBuildingTypem, copyoffield);
-    steps -= amountOfStepsWeNeedToWaitToBuildSpecificBuildingType;
+  Print(fieldCopy);
+  
+  int simulatedScore = 0;
+
+  if (action.buildAction < NONE)
+  {  
+  //simulatedScore += RunSteps(amountOfStepsWeNeedToWaitToBuildSpecificBuildingTypem, copyoffield);
+  //steps -= amountOfStepsWeNeedToWaitToBuildSpecificBuildingType;
+    action.buildAction = (BUILD_ACTION)(action.buildAction + SHIFTER);
   }
 
-  BuildOnField(int row, int col, BUILD_ACTIONS buildAction, copyoffield);
+  BUILDING b = { 0 };
+  if (action.buildAction == BUILD_ENERGY)
+  {
+    b.buildingType = "e";
+  }
+  else if (action.buildAction == BUILD_ATTACK)
+  {
+    b.buildingType = "a";
+  }
+  else if (action.buildAction == BUILD_DEFENSE)
+  {
+    b.buildingType = "d";
+  }
 
-  simulatedScore += RunSteps(amountOfStepsWeNeedToWaitToBuildSpecificBuildingType, copyoffield);
-  */
+  fieldCopy[action.y][action.x].buildings.push_back(b);
+  
+  Print(fieldCopy);
+
+  //simulatedScore += RunSteps(amountOfStepsWeNeedToWaitToBuildSpecificBuildingType, copyoffield);
+  
+  //DeleteField(fieldCopy);
 
   action.scoreDiff = simulatedScore;
 }
@@ -236,7 +269,7 @@ void bot::SimulateAction(ACTION& action, int steps)
 //n steps = possibly the length of the map, or rounds remaining (whichever is smaller) OR some other value liek 10 lel
 //Keep track of the highest difference in yours vs enemy's score. That is, you will want to know which move maximised the score diff.
 //Set the best action and return.
-void bot::SimulateActionableRows()
+void bot::SimulateActionableCells()
 {
   int stepsToSimulate = map_width;
   if (maxTurns > 0)
@@ -247,44 +280,42 @@ void bot::SimulateActionableRows()
     }
   }
 
-  for (int row : actionableRows)
+  for (const XY cell : actionableCells)
   {
-    for (int col = 0; col < (map_width / 2); ++col)
+    for (BUILD_ACTION buildAction : possibleBuildActions)
     {
-      for (BUILD_ACTION buildAction : possibleBuildActions)
-      {
-        ACTION action;
-        action.x = col;
-        action.y = row;
-        action.buildAction = buildAction;
-        SimulateAction(action, stepsToSimulate);
+      ACTION action;
+      action.x = cell.x;
+      action.y = cell.y;
+      action.buildAction = buildAction;
+      SimulateAction(action, stepsToSimulate);
 
-        allActions.push_back(action);
-      }
+      allActions.push_back(action);
     }
   }
 }
 
-void bot::RandomiseActionableRows()
+void bot::RandomiseActionableCells()
 {
   random_device rd;
   mt19937 g(rd());
-  shuffle(actionableRows.begin(), actionableRows.end(), g);
+  shuffle(actionableCells.begin(), actionableCells.end(), g);
 }
 
-void bot::SetActionableRows()
+void bot::SetActionableCells()
 {
-  //If my side of row is not full, add to vector
   for (int row = 0; row < map_height; ++row)
   {
     for (int col = 0; col < (map_width / 2); ++col)
     {
       //This cell is free to build on,
-      //so add row to list and move onto next row.
+      //so add these co-ordinates to list.
       if (field[row][col].buildings.size() == 0)
       {
-        actionableRows.push_back(row);
-        break;
+        XY xy;
+        xy.x = col;
+        xy.y = row;
+        actionableCells.push_back(xy);
       }
     }
   }
@@ -332,18 +363,18 @@ void bot::SetBestAction()
   }
 
   //Set all rows that you can actually play on.
-  SetActionableRows();
-  if (actionableRows.size() == 0)
+  SetActionableCells();
+  if (actionableCells.size() == 0)
   {
     return;
   }
 
   //Randomise order of actionable rows so bot isn't too predictable 
   //Helps if cannot simulate all rows and bot stops at same point each turn.
-  RandomiseActionableRows();
+  RandomiseActionableCells();
 
   //Run the sim on each actionable row and set a list of actions.
-  SimulateActionableRows();
+  SimulateActionableCells();
 
   SetBestActionFromAllActions();
 }
@@ -355,16 +386,20 @@ void bot::SetBestAction()
 void bot::WriteBestActionToFile()
 {
   string str = "";
-
+  //AL.
+  //TODO
+  //MAKE SURE YOU'RE PRINTING CORRECT COORDINATES!!!
   if (bestAction.buildAction > NONE)
   {
-    str
-      += to_string(bestAction.x) + ","
-      + to_string(bestAction.y) + ","
-      + to_string(bestAction.buildAction);
+    str 
+    +=  to_string(bestAction.x) 
+    +   "," 
+    +   to_string(bestAction.y) 
+    +   "," 
+    +   to_string(bestAction.buildAction);
   }
 
-  ofstream movefile(outputFileName);
+  ofstream movefile(kOutputFileName);
   movefile << str;
   movefile.close();
 }
@@ -373,15 +408,15 @@ void bot::WriteBestActionToFile()
 //CLEANUPS//
 ///////////
 
-void bot::DeleteField()
+void bot::DeleteField(CELL** myField)
 {
-  if (field != nullptr)
+  if (myField != nullptr)
   {
     for (int row = 0; row < map_height; ++row)
     {
-      delete[] field[row];
+      delete[] myField[row];
     }
-    delete[] field;
+    delete[] myField;
   }
 }
 
@@ -389,14 +424,14 @@ void bot::DeleteField()
 //UTILS//
 ////////
 
-void bot::Print()
+void bot::Print(CELL** myField)
 {
 #ifdef DEBUG
   for (int row = 0; row < map_height; ++row)
   {
     for (int col = 0; col < map_width ; ++col)
     {
-      CELL c = field[row][col];
+      CELL c = myField[row][col];
       
       string buildingsString = "_";
       for (BUILDING b : c.buildings)
@@ -429,6 +464,7 @@ void bot::Print()
     }
     cout << endl;
   }
+  cout << endl;
 #endif
 }
 
@@ -443,14 +479,17 @@ int main()
     return -1;
   }
 
-  Print();
+  Print(field);
 
   SetBestAction();
 
   WriteBestActionToFile();
 
+
+  Print(field);
+
   //Don't bother cleaning up
-  //DeleteField();
+  //DeleteField(field);
 
   return 0;
 }

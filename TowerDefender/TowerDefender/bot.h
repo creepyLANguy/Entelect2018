@@ -23,15 +23,16 @@ namespace bot
   ///////////////////////////////////////
   enum BUILD_ACTION
   {
-    WAIT_ENERGY   = -1111,
-    WAIT_DEFENSE  = -111,
-    WAIT_ATTACK   = -11,
+    WAIT_DEFENSE  = -4,
+    WAIT_ATTACK   = -3,
+    WAIT_ENERGY   = -2,
     NONE          = -1,
 
     BUILD_DEFENSE = 0,
     BUILD_ATTACK  = 1,
     BUILD_ENERGY  = 2,
 
+    SHIFTER       = 4,
   };
 
   ///////////////////////////////////////
@@ -92,14 +93,22 @@ namespace bot
     bool resultsInDeath_Opponent = false;
   };
 
+  struct XY
+  {
+    int x = -1;
+    int y = -1;
+  };
+
   ///////////////////////////////////////
   //CONSTANTS 
   ///////////////////////////////////////
 
-  const int maxRuntime = 2000;
-  const string stateFileName = "state.json";
-  const string outputFileName = "command.txt";
-
+  const int kMaxRuntime         = 2000;
+  const string kStateFileName   = "state.json";
+  const string kOutputFileName  = "command.txt";
+  
+  int kRowByteSize              = -1; //Yeah okay, we set this later...
+  
   ///////////////////////////////////////
   //MEMBERS 
   ///////////////////////////////////////
@@ -143,12 +152,13 @@ namespace bot
   PLAYER opponent;
 
   CELL** field = nullptr;
+  CELL** fieldCopy = nullptr;
 
   json j = nullptr;
 
   vector<BUILD_ACTION> possibleBuildActions;
 
-  vector<int> actionableRows;
+  vector<XY> actionableCells;
 
   vector<ACTION> allActions;
 
@@ -169,19 +179,20 @@ namespace bot
   void WriteBestActionToFile();
 
   //CLEANUPS
-  void DeleteField();  
+  void DeleteField(CELL** myField);
 
   //GAME LOGIC
   void SetBestAction();
   void SetPossibleBuildActions();
-  void SetActionableRows();
-  void RandomiseActionableRows();
-  void SimulateActionableRows();
+  void SetActionableCells();
+  void RandomiseActionableCells();
+  void SimulateActionableCells();
   void SimulateAction(ACTION& action, int steps);
+  void CreateCopyOfField();
   void SetBestActionFromAllActions();
 
   //UTILS
-  void Print();
+  void Print(CELL** myField);
 
 }
 
