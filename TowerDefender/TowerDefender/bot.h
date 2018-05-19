@@ -178,9 +178,6 @@ namespace bot
   //FILE OUTPUT
   void WriteBestActionToFile();
 
-  //CLEANUPS
-  void DeleteField(CELL** myField);
-
   //GAME LOGIC
   void SetBestAction();
   void SetPossibleBuildActions();
@@ -194,6 +191,7 @@ namespace bot
 
   //UTILS
   void Print(CELL** myField);
+  void DeleteField(CELL** myField);
 
 }
 
