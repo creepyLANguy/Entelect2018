@@ -32,8 +32,9 @@ void bot::ReadGameDetails()
 
   kRowByteSize = map_width * sizeof(CELL);
   
-  //AL.WHAT ARE THESE VALUES ?!?! 
+  //AL.
   //TODO
+  //WHAT IS THIS VALUE ?!?! 
   //maxTurns =  
 
 }
@@ -110,32 +111,44 @@ void bot::ReadMap()
       field[row][col].y         = jg["y"];
       field[row][col].cellOwner = jg["cellOwner"].get<string>();
 
-
       const int buildingCount = j["gameMap"][row][col]["buildings"].size();
-      for (int buildingIndex = 0; buildingIndex  < buildingCount; ++buildingIndex)
+
+      if (buildingCount == 0)
       {
-        json jb                   = j["gameMap"][row][col]["buildings"][0];
+        if (col < (map_width / 2))
+        {
+          XY xy;
+          xy.x = col;
+          xy.y = row;
+          actionableCells.push_back(xy);
+        }
+      }
+      else
+      {
+        for (int buildingIndex = 0; buildingIndex < buildingCount; ++buildingIndex)
+        {
+          json jb = j["gameMap"][row][col]["buildings"][0];
 
-        BUILDING b;
-        b.health                  = jb["health"];
-        b.constructionTimeLeft    = jb["constructionTimeLeft"];
-        b.price                   = jb["price"];
-        b.weaponDamage            = jb["weaponDamage"];
-        b.weaponSpeed             = jb["weaponSpeed"];
-        b.weaponCooldownTimeLeft  = jb["weaponCooldownTimeLeft"];
-        b.weaponCooldownPeriod    = jb["weaponCooldownPeriod"];
-        b.destroyMultiplier       = jb["destroyMultiplier"];
-        b.constructionScore       = jb["constructionScore"];
-        b.energyGeneratedPerTurn  = jb["energyGeneratedPerTurn"];
-        b.buildingType            = jb["buildingType"].get<string>();
-        b.x                       = jb["x"];
-        b.y                       = jb["y"];
-        b.buildingOwner           = jb["playerType"].get<string>();
+          BUILDING b;
+          b.health = jb["health"];
+          b.constructionTimeLeft = jb["constructionTimeLeft"];
+          b.price = jb["price"];
+          b.weaponDamage = jb["weaponDamage"];
+          b.weaponSpeed = jb["weaponSpeed"];
+          b.weaponCooldownTimeLeft = jb["weaponCooldownTimeLeft"];
+          b.weaponCooldownPeriod = jb["weaponCooldownPeriod"];
+          b.destroyMultiplier = jb["destroyMultiplier"];
+          b.constructionScore = jb["constructionScore"];
+          b.energyGeneratedPerTurn = jb["energyGeneratedPerTurn"];
+          b.buildingType = jb["buildingType"].get<string>();
+          b.x = jb["x"];
+          b.y = jb["y"];
+          b.buildingOwner = jb["playerType"].get<string>();
 
-        field[row][col].buildings.push_back(b);
+          field[row][col].buildings.push_back(b);
+        }
       }
 
-      
       const int missileCount = j["gameMap"][row][col]["missiles"].size();
       for (int missileIndex = 0; missileIndex < missileCount; ++missileIndex)
       {
@@ -212,6 +225,32 @@ void bot::SetBestActionFromAllActions()
   bestAction = tempBestAction;
 }
 
+int bot::RunSteps(const int steps)
+{
+  for (int i = 0; i < steps; ++i)
+  {
+    //Missiles will be generated from any attack buildings if they can fire that turn.
+    //SpawnMissles();
+    
+    //The missiles will be immediately moved, based on their speed.
+    //MoveMissles();
+
+    //Each missile will hit a building if it hit it during the movement phase.
+    //RemoveDestroyedMissles();
+
+    //Destroyed buildings will be removed.
+    //RemoveDestroyedBuildings();
+
+    //Scores will be awarded to each player, depending on the round.
+    //AwardScores();
+
+    //Energy will be awarded, based on the baseline amount received and the number of energy buildings a player has.
+    //AwardEnergy();
+  }
+  
+  return me.score = opponent.score;
+}
+
 void bot::CreateCopyOfField()
 {
   fieldCopy = new CELL*[map_height];
@@ -222,47 +261,44 @@ void bot::CreateCopyOfField()
   }
 }
 
-//AL.
-//TODO
-void bot::SimulateAction(ACTION& action, int steps)
+void bot::SimulateAction(ACTION& action, const int steps)
 {
-  //Create a copy of the field for editing. 
+  //Create a copy of the field for editing during simulation. 
   CreateCopyOfField();
-
-  Print(fieldCopy);
   
-  int simulatedScore = 0;
+  int scoreDiff = 0;
 
   if (action.buildAction < NONE)
   {  
-  //simulatedScore += RunSteps(amountOfStepsWeNeedToWaitToBuildSpecificBuildingTypem, copyoffield);
-  //steps -= amountOfStepsWeNeedToWaitToBuildSpecificBuildingType;
+    //AL.
+    //TODO
+    //scoreDiff += RunSteps(amountOfStepsWeNeedToWaitToBuildSpecificBuildingType);
+    //steps -= amountOfStepsWeNeedToWaitToBuildSpecificBuildingType;
+    
     action.buildAction = (BUILD_ACTION)(action.buildAction + SHIFTER);
   }
 
   BUILDING b = { 0 };
   if (action.buildAction == BUILD_ENERGY)
   {
-    b.buildingType = "e";
+    b.buildingType = underConstructionCharacter_energy;
   }
   else if (action.buildAction == BUILD_ATTACK)
   {
-    b.buildingType = "a";
+    b.buildingType = underConstructionCharacter_attack;
   }
   else if (action.buildAction == BUILD_DEFENSE)
   {
-    b.buildingType = "d";
+    b.buildingType = underConstructionCharacter_defense;
   }
 
   fieldCopy[action.y][action.x].buildings.push_back(b);
-  
-  Print(fieldCopy);
 
-  //simulatedScore += RunSteps(amountOfStepsWeNeedToWaitToBuildSpecificBuildingType, copyoffield);
-  
-  //DeleteField(fieldCopy);
+  scoreDiff += RunSteps(steps);
 
-  action.scoreDiff = simulatedScore;
+  action.scoreDiff = scoreDiff;
+
+  //DeleteField(fieldCopy);  
 }
 
 //For each playable row, for each cell, simulate every possible action, for n steps.
@@ -302,8 +338,8 @@ void bot::RandomiseActionableCells()
   shuffle(actionableCells.begin(), actionableCells.end(), g);
 }
 
-void bot::SetActionableCells()
-{
+//void bot::SetActionableCells()
+/*{
   for (int row = 0; row < map_height; ++row)
   {
     for (int col = 0; col < (map_width / 2); ++col)
@@ -320,6 +356,7 @@ void bot::SetActionableCells()
     }
   }
 }
+*/
 
 void bot::SetPossibleBuildActions()
 {
@@ -353,18 +390,18 @@ void bot::SetPossibleBuildActions()
 
 void bot::SetBestAction()
 {
+  //Set all rows that you can actually play on.
+  //SetActionableCells();
+  if (actionableCells.size() == 0)
+  {
+    return;
+  }
+
   bestAction.buildAction = NONE;
 
   //i.e. Which buildings you have enough energy for.
   SetPossibleBuildActions();
   if (possibleBuildActions.size() == 0)
-  {
-    return;
-  }
-
-  //Set all rows that you can actually play on.
-  SetActionableCells();
-  if (actionableCells.size() == 0)
   {
     return;
   }
@@ -386,9 +423,7 @@ void bot::SetBestAction()
 void bot::WriteBestActionToFile()
 {
   string str = "";
-  //AL.
-  //TODO
-  //MAKE SURE YOU'RE PRINTING CORRECT COORDINATES!!!
+
   if (bestAction.buildAction > NONE)
   {
     str 
@@ -479,14 +514,9 @@ int main()
     return -1;
   }
 
-  Print(field);
-
   SetBestAction();
 
   WriteBestActionToFile();
-
-
-  Print(field);
 
   //Don't bother cleaning up
   //DeleteField(field);

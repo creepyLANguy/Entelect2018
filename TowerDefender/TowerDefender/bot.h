@@ -184,11 +184,12 @@ namespace bot
   //GAME LOGIC
   void SetBestAction();
   void SetPossibleBuildActions();
-  void SetActionableCells();
+  //void SetActionableCells();
   void RandomiseActionableCells();
   void SimulateActionableCells();
-  void SimulateAction(ACTION& action, int steps);
+  void SimulateAction(ACTION& action, const int steps);
   void CreateCopyOfField();
+  int RunSteps(const int steps);
   void SetBestActionFromAllActions();
 
   //UTILS
