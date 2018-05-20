@@ -49,20 +49,21 @@ namespace bot
 
   struct BUILDING
   {
-    int health;
-    int constructionTimeLeft;
-    int price;
-    int weaponDamage;
-    int weaponSpeed;
-    int weaponCooldownTimeLeft;
-    int weaponCooldownPeriod;
-    int destroyMultiplier;
-    int constructionScore;
-    int energyGeneratedPerTurn;
-    string buildingType;
-    int x;
-    int y;
-    string buildingOwner;
+
+    int x                       = -1;
+    int y                       = -1;
+    string buildingType         = "";
+    int health                  = -1;
+    int constructionTimeLeft    = -1;
+    int price                   = -1;
+    int weaponDamage            = -1;
+    int weaponSpeed             = -1;
+    int weaponCooldownTimeLeft  = -1;
+    int weaponCooldownPeriod    = -1;
+    int destroyMultiplier       = -1;
+    int constructionScore       = -1;
+    int energyGeneratedPerTurn  = -1;
+    string buildingOwner        = "";
   };
 
   struct MISSILE
@@ -113,33 +114,33 @@ namespace bot
   //MEMBERS 
   ///////////////////////////////////////
 
-  int cost_defense                        = 30;
-  int health_defense                      = 20;
-  int constructionTime_defense            = 3;
-  int constructionScore_defense           = 1;
-  int destroyMultiplier_defense           = 1;
-  char constructedCharacter_defense       = 'D';
-  char underConstructionCharacter_defense = 'd';
+  int cost_defense                          = 30;
+  int health_defense                        = 20;
+  int constructionTime_defense              = 3;
+  int constructionScore_defense             = 1;
+  int destroyMultiplier_defense             = 1;
+  char* constructedCharacter_defense        = "D";
+  char* underConstructionCharacter_defense  = "d";
 
-  int cost_attack                         = 30;
-  int health_attack                       = 5;
-  int cooldown_attack                     = 3;
-  int damage_attack                       = 5;
-  int speed_attack                        = 1;
-  int constructionTime_attack             = 1;
-  int constructionScore_attack            = 1;
-  int destroyMultiplier_attack            = 1;
-  char constructedCharacter_attack        = 'A';
-  char underConstructionCharacter_attack  = 'a';
+  int cost_attack                           = 30;
+  int health_attack                         = 5;
+  int cooldown_attack                       = 3;
+  int damage_attack                         = 5;
+  int speed_attack                          = 1;
+  int constructionTime_attack               = 1;
+  int constructionScore_attack              = 1;
+  int destroyMultiplier_attack              = 1;
+  char* constructedCharacter_attack         = "A";
+  char* underConstructionCharacter_attack   = "a";
 
-  int cost_energy                         = 20;
-  int health_energy                       = 5;
-  int energyGeneratedPerTurn_energy       = 3;
-  int constructionTime_energy             = 1;
-  int constructionScore_energy            = 1;
-  int destroyMultiplier_energy            = 1;
-  char constructedCharacter_energy        = 'E';
-  char underConstructionCharacter_energy  = 'e';
+  int cost_energy                            = 20;
+  int health_energy                          = 5;
+  int energyGeneratedPerTurn_energy          = 3;
+  int constructionTime_energy                = 1;
+  int constructionScore_energy               = 1;
+  int destroyMultiplier_energy               = 1;
+  char* constructedCharacter_energy          = "E";
+  char* underConstructionCharacter_energy    = "e";
 
   int energyPerTurn   = 5;
 
@@ -151,8 +152,11 @@ namespace bot
   PLAYER me;
   PLAYER opponent;
 
-  CELL** field = nullptr;
-  CELL** fieldCopy = nullptr;
+  //AL.
+  //TODO
+  //hmm we may not even need full fields...
+  CELL** field_original = nullptr;
+  //CELL** field_copy = nullptr;
 
   json j = nullptr;
 
@@ -160,7 +164,11 @@ namespace bot
 
   vector<XY> actionableCells;
 
-  vector<ACTION> allActions;
+  vector<ACTION> allResultingActions;
+
+  vector<BUILDING> allBuildings;
+
+  vector<MISSILE> allMissiles;
 
   ACTION bestAction;
 
@@ -181,16 +189,19 @@ namespace bot
   //GAME LOGIC
   void SetBestAction();
   void SetPossibleBuildActions();
-  //void SetActionableCells();
   void RandomiseActionableCells();
   void SimulateActionableCells();
   void SimulateAction(ACTION& action, const int steps);
-  void CreateCopyOfField();
+  //void CreateCopyOfField();
+  void PlaceBuilding(ACTION& action);
   int RunSteps(const int steps);
+  void SpawnMissiles();
+  void MoveMissiles();
   void SetBestActionFromAllActions();
 
   //UTILS
-  void Print(CELL** myField);
+  void PrintField(CELL** myField);
+  void PrintAllMissiles();
   void DeleteField(CELL** myField);
 
 }

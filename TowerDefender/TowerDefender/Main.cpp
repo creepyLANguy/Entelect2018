@@ -96,22 +96,22 @@ void bot::ReadPlayerDetails()
 
 void bot::ReadMap()
 {
-  field = new CELL*[map_height];
+  field_original = new CELL*[map_height];
   for (int i = 0; i < map_height; ++i)
   {
-    field[i] = new CELL[map_width];
+    field_original[i] = new CELL[map_width];
   }
 
   for (int row = 0; row < map_height; ++row)
   {
     for (int col = 0; col < map_width; ++col)
     {
-      json jg                   = j["gameMap"][row][col];
-      field[row][col].x         = jg["x"];
-      field[row][col].y         = jg["y"];
-      field[row][col].cellOwner = jg["cellOwner"].get<string>();
+      json jg                             = j["gameMap"][row][col];
+      field_original[row][col].x          = jg["x"];
+      field_original[row][col].y          = jg["y"];
+      field_original[row][col].cellOwner  = jg["cellOwner"].get<string>();
 
-      const int buildingCount = j["gameMap"][row][col]["buildings"].size();
+      const size_t buildingCount = j["gameMap"][row][col]["buildings"].size();
 
       if (buildingCount == 0)
       {
@@ -145,11 +145,13 @@ void bot::ReadMap()
           b.y                       = jb["y"];
           b.buildingOwner           = jb["playerType"].get<string>();
 
-          field[row][col].buildings.push_back(b);
+          field_original[row][col].buildings.push_back(b);
+
+          allBuildings.push_back(b);
         }
       }
 
-      const int missileCount = j["gameMap"][row][col]["missiles"].size();
+      const size_t missileCount = j["gameMap"][row][col]["missiles"].size();
       for (int missileIndex = 0; missileIndex < missileCount; ++missileIndex)
       {
         json jm         = j["gameMap"][row][col]["missiles"][missileIndex];
@@ -161,7 +163,9 @@ void bot::ReadMap()
         m.y             = jm["y"];
         m.missileOwner  = jm["playerType"].get<string>();
 
-        field[row][col].missiles.push_back(m);
+        field_original[row][col].missiles.push_back(m);
+
+        allMissiles.push_back(m);
       }
 
     }
@@ -203,10 +207,9 @@ void bot::SetBestActionFromAllActions()
   //TODO
   //TAKE resultsInDeath_Me AND resultsInDeath_Opponent INTO ACCOUNT
 
+  ACTION tempBestAction = allResultingActions.front();
 
-  ACTION tempBestAction = allActions.front();
-
-  for (const ACTION action : allActions)
+  for (const ACTION action : allResultingActions)
   {
     if (tempBestAction.scoreDiff < action.scoreDiff)
     {
@@ -225,21 +228,69 @@ void bot::SetBestActionFromAllActions()
   bestAction = tempBestAction;
 }
 
+void bot::MoveMissiles()
+{
+  for (int i = 0; i < allMissiles.size(); ++i)
+  {
+    MISSILE& m = allMissiles[i];
+
+    if (m.missileOwner == "A")
+    {
+      m.x += (1 * m.speed);
+    }
+    else
+    {
+      m.x += (-1 * m.speed);
+    }
+  }
+}
+
+void bot::SpawnMissiles()
+{
+  for (int i = 0; i < allBuildings.size(); ++i)
+  {
+    BUILDING& b = allBuildings[i];
+
+    if (b.buildingType[0] == 'A')
+    {
+      if (b.weaponCooldownTimeLeft == 0)
+      {
+        MISSILE m;
+        m.damage = damage_attack;
+        m.speed = speed_attack;
+        m.x = b.x;
+        m.y = b.y;
+        m.missileOwner = b.buildingOwner;
+        allMissiles.push_back(m);
+        b.weaponCooldownTimeLeft = b.weaponCooldownPeriod;
+      }
+      else
+      {
+        --b.weaponCooldownTimeLeft;
+      }
+    }
+  }
+}
+
 int bot::RunSteps(const int steps)
 {
   for (int i = 0; i < steps; ++i)
   {
     //Missiles will be generated from any attack buildings if they can fire that turn.
-    //SpawnMissles();
+    SpawnMissiles();
 
     //The missiles will be immediately moved, based on their speed.
-    //MoveMissles();
+    MoveMissiles();
 
     //Each missile will hit a building if it hit it during the movement phase.
-    //RemoveDestroyedMissles();
+    //Also remove missiles that have left the map.
+    //Don't forget to affect the scores. 
+    //RemoveDestroyedMissiles();
 
     //Destroyed buildings will be removed.
     //RemoveDestroyedBuildings();
+
+    //ReduceconstructionTimeLeft();
 
     //Scores will be awarded to each player, depending on the round.
     //AwardScores();
@@ -251,20 +302,67 @@ int bot::RunSteps(const int steps)
   return me.score = opponent.score;
 }
 
+/*
 void bot::CreateCopyOfField()
 {
-  fieldCopy = new CELL*[map_height];
+  field_copy = new CELL*[map_height];
   for (int i = 0; i < map_height; ++i)
   {
-    fieldCopy[i] = new CELL[map_width];
-    memcpy(fieldCopy[i], field[i], kRowByteSize);
+    field_copy[i] = new CELL[map_width];
+    memcpy(field_copy[i], field_original[i], kRowByteSize);
   }
+}
+*/
+
+void bot::PlaceBuilding(ACTION& action)
+{
+  BUILDING b;
+  b.buildingOwner = "A";
+  b.x             = action.x;
+  b.y             = action.y;
+
+  if (action.buildAction == BUILD_ENERGY)
+  {
+    b.price                 = cost_energy;
+    b.health                = health_energy;
+    b.constructionTimeLeft  = constructionTime_energy;
+    b.constructionScore     = constructionScore_energy;
+    b.destroyMultiplier     = destroyMultiplier_energy;
+    b.buildingType          = underConstructionCharacter_energy;
+  }
+
+  else if (action.buildAction == BUILD_ATTACK)
+  {
+    b.price                   = cost_attack;
+    b.health                  = health_attack;
+    b.weaponCooldownPeriod    = cooldown_attack;
+    b.weaponCooldownTimeLeft  = b.weaponCooldownPeriod;
+    b.weaponDamage            = damage_attack;
+    b.weaponSpeed             = speed_attack;
+    b.constructionTimeLeft    = constructionTime_attack;
+    b.constructionScore       = constructionScore_attack;
+    b.destroyMultiplier       = destroyMultiplier_attack;
+    b.buildingType            = underConstructionCharacter_attack;
+  }
+
+  else if (action.buildAction == BUILD_DEFENSE)
+  {
+    b.price                   = cost_energy;
+    b.health                  = health_energy;
+    b.energyGeneratedPerTurn  = energyGeneratedPerTurn_energy;
+    b.constructionTimeLeft    = constructionTime_energy;
+    b.constructionScore       = constructionScore_energy;
+    b.destroyMultiplier       = destroyMultiplier_energy;
+    b.buildingType            = underConstructionCharacter_defense;
+  }
+
+  allBuildings.push_back(b);
 }
 
 void bot::SimulateAction(ACTION& action, const int steps)
 {
   //Create a copy of the field for editing during simulation. 
-  CreateCopyOfField();
+  //CreateCopyOfField();
 
   int scoreDiff = 0;
 
@@ -278,21 +376,7 @@ void bot::SimulateAction(ACTION& action, const int steps)
     action.buildAction = static_cast<BUILD_ACTION>(action.buildAction + SHIFTER);
   }
 
-  BUILDING b = { 0 };
-  if (action.buildAction == BUILD_ENERGY)
-  {
-    b.buildingType = underConstructionCharacter_energy;
-  }
-  else if (action.buildAction == BUILD_ATTACK)
-  {
-    b.buildingType = underConstructionCharacter_attack;
-  }
-  else if (action.buildAction == BUILD_DEFENSE)
-  {
-    b.buildingType = underConstructionCharacter_defense;
-  }
-
-  fieldCopy[action.y][action.x].buildings.push_back(b);
+  PlaceBuilding(action);
 
   scoreDiff += RunSteps(steps);
 
@@ -326,7 +410,7 @@ void bot::SimulateActionableCells()
       action.buildAction = buildAction;
       SimulateAction(action, stepsToSimulate);
 
-      allActions.push_back(action);
+      allResultingActions.push_back(action);
     }
   }
 }
@@ -337,26 +421,6 @@ void bot::RandomiseActionableCells()
   mt19937 g(rd());
   shuffle(actionableCells.begin(), actionableCells.end(), g);
 }
-
-//void bot::SetActionableCells()
-/*{
-for (int row = 0; row < map_height; ++row)
-{
-for (int col = 0; col < (map_width / 2); ++col)
-{
-//This cell is free to build on,
-//so add these co-ordinates to list.
-if (field[row][col].buildings.size() == 0)
-{
-XY xy;
-xy.x = col;
-xy.y = row;
-actionableCells.push_back(xy);
-}
-}
-}
-}
-*/
 
 void bot::SetPossibleBuildActions()
 {
@@ -390,8 +454,6 @@ void bot::SetPossibleBuildActions()
 
 void bot::SetBestAction()
 {
-  //Set all rows that you can actually play on.
-  //SetActionableCells();
   if (actionableCells.size() == 0)
   {
     return;
@@ -443,7 +505,7 @@ void bot::WriteBestActionToFile()
 //UTILS//
 ////////
 
-void bot::Print(CELL** myField)
+void bot::PrintField(CELL** myField)
 {
 #ifdef DEBUG
   for (int row = 0; row < map_height; ++row)
@@ -461,16 +523,16 @@ void bot::Print(CELL** myField)
         }
       }
 
-      string misslesString = "";
+      string missilesString = "";
       for (MISSILE m : c.missiles)
       {
         if (m.missileOwner == "A")
         {
-          misslesString += ">";
+          missilesString += ">";
         }
         else if (m.missileOwner == "B")
         {
-          misslesString+="<";
+          missilesString+="<";
         }
       }
 
@@ -478,12 +540,23 @@ void bot::Print(CELL** myField)
       //cout << " " << "x:" << c.x << "y:" << c.y;
       //cout << " " << "row:" << row << "col:" << col;
       cout << " " << buildingsString;
-      //cout << " " << misslesString;
+      //cout << " " << missilesString;
       cout << " " << "]";
     }
     cout << endl;
   }
   cout << endl;
+#endif
+}
+
+void bot::PrintAllMissiles()
+{
+#ifdef DEBUG
+  for (MISSILE m : allMissiles)
+  {
+    cout << m.missileOwner << "[" << m.x << "," << m.y << "]" << " ";
+  }
+  cout << endl << endl;
 #endif
 }
 
@@ -514,7 +587,6 @@ int main()
 
   WriteBestActionToFile();
 
-  //Don't bother cleaning up
   //DeleteField(field);
 
   return 0;
