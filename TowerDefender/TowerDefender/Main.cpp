@@ -96,20 +96,24 @@ void bot::ReadPlayerDetails()
 
 void bot::ReadMap()
 {
+  /*
   field_original = new CELL*[map_height];
   for (int i = 0; i < map_height; ++i)
   {
     field_original[i] = new CELL[map_width];
   }
+  */
 
   for (int row = 0; row < map_height; ++row)
   {
     for (int col = 0; col < map_width; ++col)
     {
+      /*
       json jg                             = j["gameMap"][row][col];
       field_original[row][col].x          = jg["x"];
       field_original[row][col].y          = jg["y"];
       field_original[row][col].cellOwner  = jg["cellOwner"].get<string>();
+      */
 
       const size_t buildingCount = j["gameMap"][row][col]["buildings"].size();
 
@@ -145,7 +149,7 @@ void bot::ReadMap()
           b.y                       = jb["y"];
           b.buildingOwner           = jb["playerType"].get<string>();
 
-          field_original[row][col].buildings.push_back(b);
+          //field_original[row][col].buildings.push_back(b);
 
           allBuildings.push_back(b);
         }
@@ -163,7 +167,7 @@ void bot::ReadMap()
         m.y             = jm["y"];
         m.missileOwner  = jm["playerType"].get<string>();
 
-        field_original[row][col].missiles.push_back(m);
+        //field_original[row][col].missiles.push_back(m);
 
         allMissiles.push_back(m);
       }
@@ -200,7 +204,7 @@ bool bot::InitialiseFromJSON()
 //GAME LOGIC//
 /////////////
 
-void bot::SetBestActionFromAllActions()
+void bot::SelectBestActionFromAllActions()
 {
 
   //AL.
@@ -226,6 +230,80 @@ void bot::SetBestActionFromAllActions()
   }
 
   bestAction = tempBestAction;
+}
+
+void bot::ReduceConstructionTimeLeft()
+{
+  for (int i = 0; i < allBuildings.size(); ++i)
+  {
+    --allBuildings[i].constructionTimeLeft;
+  }
+}
+
+void bot::ProcessHits()
+{
+
+  //AL.
+  //TODO
+  //DO SCORE ADJUSTMENTS!
+
+  //remove missles that hit a base and reduce player health.
+  for (int im = 0; im < allMissiles.size(); ++im)
+  {
+    MISSILE& m = allMissiles[im];
+
+    if (m.x < 0)
+    {
+      me.health -= m.damage;
+    }
+    else if (m.x >= map_width)
+    {
+      opponent.health -= m.damage;
+    }
+
+    allMissiles.erase(allMissiles.begin() + im);
+  }
+
+
+  //for each building, see if each missile collides.
+  for (int ib = 0; ib < allBuildings.size(); ++ib)
+  {
+    BUILDING& b = allBuildings[ib];
+
+    //buildings under construction cannot be hit.
+    if  (
+        (b.buildingType[0] == 'a') ||
+        (b.buildingType[0] == 'd') ||
+        (b.buildingType[0] == 'e')
+        )
+    {
+      continue;
+    }
+
+    for (int im = 0; im < allMissiles.size(); ++im)
+    {
+      MISSILE& m = allMissiles[im];
+
+      //if a missile collides, set the building's health and remove the missile.
+      if ( (b.x == m.x) && (b.y == m.y) && (b.buildingOwner != m.missileOwner))
+      {
+        b.health -= m.damage;
+
+        //remove building if it's completely destroyed. 
+        if (b.health <= 0)
+        {
+          allBuildings.erase(allBuildings.begin() + ib);
+        }
+
+        //remove the missile.
+        allMissiles.erase(allMissiles.begin() + im);
+
+        //only one missile can hit a building per turn.
+        break;
+      }
+    }
+  }
+
 }
 
 void bot::MoveMissiles()
@@ -272,10 +350,36 @@ void bot::SpawnMissiles()
   }
 }
 
+void bot::ConstructBuildings()
+{
+  for (int i = 0; i < allBuildings.size(); ++i)
+  {
+    BUILDING b = allBuildings[i];
+    if (b.buildingType[0] == 'a')
+    {
+      b.buildingType[0] = 'A';
+    }
+    else if (b.buildingType[0] == 'd')
+    {
+      b.buildingType[0] = 'D';
+    }
+    else if (b.buildingType[0] == 'e')
+    {
+      b.buildingType[0] = 'E';
+    }
+  }
+}
+
 int bot::RunSteps(const int steps)
 {
+  tempScore_Me        = 0;
+  tempScore_Opponent  = 0;
+
   for (int i = 0; i < steps; ++i)
   {
+    //if any have zero time remaining to be built. 
+    ConstructBuildings();
+
     //Missiles will be generated from any attack buildings if they can fire that turn.
     SpawnMissiles();
 
@@ -283,14 +387,12 @@ int bot::RunSteps(const int steps)
     MoveMissiles();
 
     //Each missile will hit a building if it hit it during the movement phase.
-    //Also remove missiles that have left the map.
+    //Also remove missiles that have left the map and destroyed buildings/missiles.
     //Don't forget to affect the scores. 
-    //RemoveDestroyedMissiles();
+    ProcessHits();
 
-    //Destroyed buildings will be removed.
-    //RemoveDestroyedBuildings();
-
-    //ReduceconstructionTimeLeft();
+    //Note, this will influence the building states for the next round.
+    ReduceConstructionTimeLeft(); 
 
     //Scores will be awarded to each player, depending on the round.
     //AwardScores();
@@ -299,7 +401,7 @@ int bot::RunSteps(const int steps)
     //AwardEnergy();
   }
 
-  return me.score = opponent.score;
+  return tempScore_Me - tempScore_Opponent;
 }
 
 /*
@@ -475,7 +577,7 @@ void bot::SetBestAction()
   //Run the sim on each actionable row and set a list of actions.
   SimulateActionableCells();
 
-  SetBestActionFromAllActions();
+  SelectBestActionFromAllActions();
 }
 
 ////////////////
