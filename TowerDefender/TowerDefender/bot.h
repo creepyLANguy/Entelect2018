@@ -152,10 +152,13 @@ namespace bot
   PLAYER me;
   PLAYER opponent;
 
+  int tempScore_Me        = 0;
+  int tempScore_Opponent  = 0;
+
   //AL.
   //TODO
   //hmm we may not even need full fields...
-  CELL** field_original = nullptr;
+  //CELL** field_original = nullptr;
   //CELL** field_copy = nullptr;
 
   json j = nullptr;
@@ -195,9 +198,12 @@ namespace bot
   //void CreateCopyOfField();
   void PlaceBuilding(ACTION& action);
   int RunSteps(const int steps);
+  void ConstructBuildings();
   void SpawnMissiles();
   void MoveMissiles();
-  void SetBestActionFromAllActions();
+  void ProcessHits();
+  void ReduceConstructionTimeLeft();
+  void SelectBestActionFromAllActions();
 
   //UTILS
   void PrintField(CELL** myField);
