@@ -32,6 +32,8 @@ void bot::ReadGameDetails()
 
   kRowByteSize = map_width * sizeof(CELL);
   
+  kHalfMapWidth = (map_width / 2);
+
   //AL.
   //TODO
   //WHAT IS THIS VALUE ?!?! 
@@ -119,7 +121,7 @@ void bot::ReadMap()
 
       if (buildingCount == 0)
       {
-        if (col < (map_width / 2))
+        if (col < kHalfMapWidth)
         {
           XY xy;
           xy.x = col;
@@ -203,33 +205,61 @@ bool bot::InitialiseFromJSON()
 ///////////////
 //GAME LOGIC//
 /////////////
-
+//AL.
+//TODO
 void bot::SelectBestActionFromAllActions()
 {
-
-  //AL.
-  //TODO
-  //TAKE resultsInDeath_Me AND resultsInDeath_Opponent INTO ACCOUNT
-
   ACTION tempBestAction = allResultingActions.front();
 
   for (const ACTION action : allResultingActions)
   {
+    //BLEH THE FOLLOWING IS THE FIRST DRAFT
     if (tempBestAction.scoreDiff < action.scoreDiff)
     {
       tempBestAction.scoreDiff = action.scoreDiff;
     }
-    else if (tempBestAction.scoreDiff == action.scoreDiff)
+
+    /*
+    //both options have same death scenarios.
+    if  (
+        (action.resultsInDeath_Me == tempBestAction.resultsInDeath_Me) &&
+        (action.resultsInDeath_Opponent == tempBestAction.resultsInDeath_Opponent)
+        )
     {
-      //AL.
-      //TODO
-      //IF THE SCORES ARE THE SAME, WHAT's THE NEXT CRITERIA?
-      //Just take latest choice for now.
-      tempBestAction.scoreDiff = action.scoreDiff;
+      if (action.scoreDiff > tempBestAction.scoreDiff)
+      {
+        tempBestAction.scoreDiff = action.scoreDiff;
+        continue;
+      }
+    }
+*/
+  }
+  bestAction = tempBestAction;
+}
+
+void bot::AwardEnergy()
+{
+  int energyBuildingCount_Me = 0;
+  int energyBuildingCount_Opponent = 0;
+
+  //tally energy buildings
+  for (const BUILDING b : allBuildings)
+  {
+    if (b.x < kHalfMapWidth)
+    {
+      ++energyBuildingCount_Me;
+    }
+    else
+    {
+      ++energyBuildingCount_Opponent;
     }
   }
 
-  bestAction = tempBestAction;
+  const int energyGenerated_Me = energyGeneratedPerTurn_energy * energyBuildingCount_Me;
+  const int energyGenerated_Opponent = energyGeneratedPerTurn_energy * energyBuildingCount_Opponent;
+
+  tempEnergy_Me       += (energyPerTurn + energyGenerated_Me);
+  tempEnergy_Opponent += (energyPerTurn + energyGenerated_Opponent);
 }
 
 void bot::ReduceConstructionTimeLeft()
@@ -240,12 +270,8 @@ void bot::ReduceConstructionTimeLeft()
   }
 }
 
-void bot::ProcessHits()
+void bot::ProcessHits(ACTION& action)
 {
-
-  //AL.
-  //TODO
-  //DO SCORE ADJUSTMENTS!
 
   //remove missles that hit a base and reduce player health.
   for (int im = 0; im < allMissiles.size(); ++im)
@@ -255,20 +281,31 @@ void bot::ProcessHits()
     if (m.x < 0)
     {
       me.health -= m.damage;
+      tempScore_Opponent += (m.damage * 100);
     }
     else if (m.x >= map_width)
     {
       opponent.health -= m.damage;
+      tempScore_Me += (m.damage * 100);
     }
 
     allMissiles.erase(allMissiles.begin() + im);
   }
 
+  //flag any resulting deaths.
+  if (me.health <= 0)
+  {
+    action.resultsInDeath_Me = true;
+  }
+  if (opponent.health <= 0)
+  {
+    action.resultsInDeath_Opponent = true;
+  }
 
   //for each building, see if each missile collides.
-  for (int ib = 0; ib < allBuildings.size(); ++ib)
+  for (int i_build = 0; i_build < allBuildings.size(); ++i_build)
   {
-    BUILDING& b = allBuildings[ib];
+    BUILDING& b = allBuildings[i_build];
 
     //buildings under construction cannot be hit.
     if  (
@@ -280,23 +317,34 @@ void bot::ProcessHits()
       continue;
     }
 
-    for (int im = 0; im < allMissiles.size(); ++im)
+    for (int i_miss = 0; i_miss < allMissiles.size(); ++i_miss)
     {
-      MISSILE& m = allMissiles[im];
+      MISSILE& m = allMissiles[i_miss];
 
       //if a missile collides, set the building's health and remove the missile.
       if ( (b.x == m.x) && (b.y == m.y) && (b.buildingOwner != m.missileOwner))
       {
         b.health -= m.damage;
 
+        //adjust temp scores
+        //if (b.buildingOwner == "A")
+        if (b.x < kHalfMapWidth)
+        {
+          tempScore_Opponent += m.damage;
+        }
+        else
+        {
+          tempScore_Me += m.damage;
+        }
+
         //remove building if it's completely destroyed. 
         if (b.health <= 0)
         {
-          allBuildings.erase(allBuildings.begin() + ib);
+          allBuildings.erase(allBuildings.begin() + i_build);
         }
 
         //remove the missile.
-        allMissiles.erase(allMissiles.begin() + im);
+        allMissiles.erase(allMissiles.begin() + i_miss);
 
         //only one missile can hit a building per turn.
         break;
@@ -352,32 +400,50 @@ void bot::SpawnMissiles()
 
 void bot::ConstructBuildings()
 {
+
   for (int i = 0; i < allBuildings.size(); ++i)
   {
     BUILDING b = allBuildings[i];
-    if (b.buildingType[0] == 'a')
+
+    if (b.constructionTimeLeft == 0)
     {
-      b.buildingType[0] = 'A';
+      //award score for construciton
+      if (b.x < kHalfMapWidth)
+      {
+        tempScore_Me += b.constructionScore;
+      }
+      else
+      {
+        tempScore_Opponent += b.constructionScore;
+      }
+
+      //actually do the construction
+      if (b.buildingType[0] == 'a')
+      {
+        b.buildingType[0] = 'A';
+      }
+      else if (b.buildingType[0] == 'd')
+      {
+        b.buildingType[0] = 'D';
+      }
+      else if (b.buildingType[0] == 'e')
+      {
+        b.buildingType[0] = 'E';
+      }
+
     }
-    else if (b.buildingType[0] == 'd')
-    {
-      b.buildingType[0] = 'D';
-    }
-    else if (b.buildingType[0] == 'e')
-    {
-      b.buildingType[0] = 'E';
-    }
+
   }
 }
 
-int bot::RunSteps(const int steps)
+void bot::RunSteps(const int steps, ACTION& action)
 {
   tempScore_Me        = 0;
   tempScore_Opponent  = 0;
 
   for (int i = 0; i < steps; ++i)
   {
-    //if any have zero time remaining to be built. 
+    //If any have zero time remaining to be built. 
     ConstructBuildings();
 
     //Missiles will be generated from any attack buildings if they can fire that turn.
@@ -389,19 +455,16 @@ int bot::RunSteps(const int steps)
     //Each missile will hit a building if it hit it during the movement phase.
     //Also remove missiles that have left the map and destroyed buildings/missiles.
     //Don't forget to affect the scores. 
-    ProcessHits();
+    ProcessHits(action);
 
     //Note, this will influence the building states for the next round.
     ReduceConstructionTimeLeft(); 
 
-    //Scores will be awarded to each player, depending on the round.
-    //AwardScores();
-
     //Energy will be awarded, based on the baseline amount received and the number of energy buildings a player has.
-    //AwardEnergy();
+    AwardEnergy();
   }
 
-  return tempScore_Me - tempScore_Opponent;
+  action.scoreDiff = (tempScore_Me - tempScore_Opponent);
 }
 
 /*
@@ -458,31 +521,53 @@ void bot::PlaceBuilding(ACTION& action)
     b.buildingType            = underConstructionCharacter_defense;
   }
 
+  tempEnergy_Me -= b.price;
+
   allBuildings.push_back(b);
 }
 
-void bot::SimulateAction(ACTION& action, const int steps)
+int bot::GetBuildingCostFromAction(BUILD_ACTION& ba)
+{
+  if (ba == WAIT_ATTACK)
+  {
+    return cost_attack;
+  }
+  
+  if (ba == WAIT_DEFENSE)
+  {
+    return cost_defense;
+  }
+
+  if (ba == WAIT_ENERGY)
+  {
+    return cost_energy;
+  }
+
+  return 0;
+}
+
+void bot::SimulateAction(ACTION& action, int steps)
 {
   //Create a copy of the field for editing during simulation. 
   //CreateCopyOfField();
 
-  int scoreDiff = 0;
+  tempEnergy_Me       = me.energy;
+  tempEnergy_Opponent = opponent.energy;
 
   if (action.buildAction < NONE)
   {
-    //AL.
-    //TODO
-    //scoreDiff += RunSteps(amountOfStepsWeNeedToWaitToBuildSpecificBuildingType);
-    //steps -= amountOfStepsWeNeedToWaitToBuildSpecificBuildingType;
-
+    const int actionCost = GetBuildingCostFromAction(action.buildAction);
+    while (tempEnergy_Me < actionCost)
+    {
+      RunSteps(1, action);
+      --steps;
+    }
     action.buildAction = static_cast<BUILD_ACTION>(action.buildAction + SHIFTER);
   }
 
   PlaceBuilding(action);
 
-  scoreDiff += RunSteps(steps);
-
-  action.scoreDiff = scoreDiff;
+  RunSteps(steps, action);
 
   //DeleteField(fieldCopy);  
 }

@@ -108,8 +108,12 @@ namespace bot
   const string kStateFileName   = "state.json";
   const string kOutputFileName  = "command.txt";
   
-  int kRowByteSize              = -1; //Yeah okay, we set this later...
+  int kRowByteSize = -1; //Yeah okay, we set this later...
   
+  int kHalfMapWidth = -1; //and this one, too...
+
+  int kMarginalScoreDiff = 5;
+
   ///////////////////////////////////////
   //MEMBERS 
   ///////////////////////////////////////
@@ -155,9 +159,9 @@ namespace bot
   int tempScore_Me        = 0;
   int tempScore_Opponent  = 0;
 
-  //AL.
-  //TODO
-  //hmm we may not even need full fields...
+  int tempEnergy_Me       = 0;
+  int tempEnergy_Opponent = 0;
+
   //CELL** field_original = nullptr;
   //CELL** field_copy = nullptr;
 
@@ -194,15 +198,17 @@ namespace bot
   void SetPossibleBuildActions();
   void RandomiseActionableCells();
   void SimulateActionableCells();
-  void SimulateAction(ACTION& action, const int steps);
+  void SimulateAction(ACTION& action, int steps);
+  int GetBuildingCostFromAction(BUILD_ACTION& ba);
   //void CreateCopyOfField();
   void PlaceBuilding(ACTION& action);
-  int RunSteps(const int steps);
+  void RunSteps(const int steps, ACTION& action);
   void ConstructBuildings();
   void SpawnMissiles();
   void MoveMissiles();
-  void ProcessHits();
+  void ProcessHits(ACTION& action);
   void ReduceConstructionTimeLeft();
+  void AwardEnergy();
   void SelectBestActionFromAllActions();
 
   //UTILS
