@@ -145,14 +145,14 @@ namespace bot
   char* constructedCharacter_attack         = "A";
   char* underConstructionCharacter_attack   = "a";
 
-  int cost_energy                            = 20;
-  int health_energy                          = 5;
-  int energyGeneratedPerTurn_energy          = 3;
-  int constructionTime_energy                = 1;
-  int constructionScore_energy               = 1;
-  int destroyMultiplier_energy               = 1;
-  char* constructedCharacter_energy          = "E";
-  char* underConstructionCharacter_energy    = "e";
+  int cost_energy                           = 20;
+  int health_energy                         = 5;
+  int energyGeneratedPerTurn_energy         = 3;
+  int constructionTime_energy               = 1;
+  int constructionScore_energy              = 1;
+  int destroyMultiplier_energy              = 1;
+  char* constructedCharacter_energy         = "E";
+  char* underConstructionCharacter_energy   = "e";
 
   int energyPerTurn   = 5;
 
