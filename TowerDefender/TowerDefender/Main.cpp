@@ -209,32 +209,63 @@ bool bot::InitialiseFromJSON()
 //TODO
 void bot::SelectBestActionFromAllActions()
 {
-  ACTION tempBestAction = allResultingActions.front();
+  ACTION currentAction = allResultingActions.front();
 
-  for (const ACTION action : allResultingActions)
+  for (const ACTION newAction : allResultingActions)
   {
-    //BLEH THE FOLLOWING IS THE FIRST DRAFT
-    if (tempBestAction.scoreDiff < action.scoreDiff)
-    {
-      tempBestAction.scoreDiff = action.scoreDiff;
-    }
 
-    /*
-    //both options have same death scenarios.
+    //Both options have same death scenarios.
     if  (
-        (action.resultsInDeath_Me == tempBestAction.resultsInDeath_Me) &&
-        (action.resultsInDeath_Opponent == tempBestAction.resultsInDeath_Opponent)
+        (newAction.resultsInDeath_Me == currentAction.resultsInDeath_Me) &&
+        (newAction.resultsInDeath_Opponent == currentAction.resultsInDeath_Opponent)
         )
     {
-      if (action.scoreDiff > tempBestAction.scoreDiff)
+      //Take the action with best scorediff.
+      if (currentAction.scoreDiff > newAction.scoreDiff)
       {
-        tempBestAction.scoreDiff = action.scoreDiff;
-        continue;
+        currentAction = newAction;
       }
     }
-*/
+  
+    //Neither player dies.
+    else if (
+            (newAction.resultsInDeath_Me == false) &&
+            (newAction.resultsInDeath_Opponent == false)
+            )
+    {
+      //Take the action with best scorediff.
+      if (newAction.scoreDiff > currentAction.scoreDiff)
+      {
+        currentAction = newAction;
+      }
+    }
+
+    //Only opponent dies. 
+    else if (
+            (newAction.resultsInDeath_Opponent == true) &&
+            (newAction.resultsInDeath_Me == false)
+            )
+    {
+      //Neither of us would have died, or only I would have died. 
+      if  (
+          ((currentAction.resultsInDeath_Me == false) && (currentAction.resultsInDeath_Opponent == false)) ||
+          (currentAction.resultsInDeath_Me == true)
+          )
+      {
+        currentAction = newAction;
+      }
+    }
+    
+    //Only I die, or we both die.     
+    else
+    {
+      //Ignore this action. It's shit. 
+      //Self preservation FTW.
+    }
+
   }
-  bestAction = tempBestAction;
+
+  bestAction = currentAction;
 }
 
 void bot::AwardEnergy()
@@ -273,7 +304,7 @@ void bot::ReduceConstructionTimeLeft()
 void bot::ProcessHits(ACTION& action)
 {
 
-  //remove missles that hit a base and reduce player health.
+  //remove missiles that hit a base and reduce player health.
   for (int im = 0; im < allMissiles.size(); ++im)
   {
     MISSILE& m = allMissiles[im];
