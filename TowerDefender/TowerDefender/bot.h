@@ -35,6 +35,14 @@ namespace bot
     SHIFTER       = 4,
   };
 
+  enum ERROR_CODE
+  {
+    FAIL_OUTRIGHT = -1,
+    FAIL_NO_WORK  = 0,
+    OKAY          = 1,
+    TIMEOUT       = 2,
+  };
+
   ///////////////////////////////////////
   //STRUCTS 
   ///////////////////////////////////////
@@ -104,7 +112,7 @@ namespace bot
   //CONSTANTS 
   ///////////////////////////////////////
 
-  const int kMaxRuntime         = 2000;
+  const int kMaxRuntimeMillis   = 2000;
   const string kStateFileName   = "state.json";
   const string kOutputFileName  = "command.txt";
   
@@ -174,8 +182,10 @@ namespace bot
   vector<ACTION> allResultingActions;
 
   vector<BUILDING> allBuildings;
+  vector<BUILDING> allBuildings_SimCopy;
 
   vector<MISSILE> allMissiles;
+  vector<MISSILE> allMissiles_SimCopy;
 
   ACTION bestAction;
 
@@ -194,11 +204,11 @@ namespace bot
   void WriteBestActionToFile();
 
   //GAME LOGIC
-  void SetBestAction();
+  ERROR_CODE SetBestAction();
   void SetPossibleBuildActions();
   void RandomiseActionableCells();
-  void SimulateActionableCells();
-  void SimulateAction(ACTION& action, int steps);
+  ERROR_CODE SimulateActionableCells();
+  void SimulateAction(ACTION action, int steps);
   int GetBuildingCostFromAction(BUILD_ACTION& ba);
   //void CreateCopyOfField();
   void PlaceBuilding(ACTION& action);
@@ -213,7 +223,7 @@ namespace bot
 
   //UTILS
   void PrintField(CELL** myField);
-  void PrintAllMissiles();
+  void PrintAllMissiles(vector<MISSILE> myMissiles);
   void DeleteField(CELL** myField);
 
 }

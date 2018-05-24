@@ -205,8 +205,7 @@ bool bot::InitialiseFromJSON()
 ///////////////
 //GAME LOGIC//
 /////////////
-//AL.
-//TODO
+
 void bot::SelectBestActionFromAllActions()
 {
   ACTION currentAction = allResultingActions.front();
@@ -274,7 +273,7 @@ void bot::AwardEnergy()
   int energyBuildingCount_Opponent = 0;
 
   //tally energy buildings
-  for (const BUILDING b : allBuildings)
+  for (const BUILDING b : allBuildings_SimCopy)
   {
     if (b.x < kHalfMapWidth)
     {
@@ -295,9 +294,9 @@ void bot::AwardEnergy()
 
 void bot::ReduceConstructionTimeLeft()
 {
-  for (int i = 0; i < allBuildings.size(); ++i)
+  for (int i = 0; i < allBuildings_SimCopy.size(); ++i)
   {
-    --allBuildings[i].constructionTimeLeft;
+    --allBuildings_SimCopy[i].constructionTimeLeft;
   }
 }
 
@@ -305,9 +304,9 @@ void bot::ProcessHits(ACTION& action)
 {
 
   //remove missiles that hit a base and reduce player health.
-  for (int im = 0; im < allMissiles.size(); ++im)
+  for (int im = 0; im < allMissiles_SimCopy.size(); ++im)
   {
-    MISSILE& m = allMissiles[im];
+    MISSILE& m = allMissiles_SimCopy[im];
 
     if (m.x < 0)
     {
@@ -320,7 +319,7 @@ void bot::ProcessHits(ACTION& action)
       tempScore_Me += (m.damage * 100);
     }
 
-    allMissiles.erase(allMissiles.begin() + im);
+    allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + im);
   }
 
   //flag any resulting deaths.
@@ -334,9 +333,9 @@ void bot::ProcessHits(ACTION& action)
   }
 
   //for each building, see if each missile collides.
-  for (int i_build = 0; i_build < allBuildings.size(); ++i_build)
+  for (int i_build = 0; i_build < allBuildings_SimCopy.size(); ++i_build)
   {
-    BUILDING& b = allBuildings[i_build];
+    BUILDING& b = allBuildings_SimCopy[i_build];
 
     //buildings under construction cannot be hit.
     if  (
@@ -348,9 +347,9 @@ void bot::ProcessHits(ACTION& action)
       continue;
     }
 
-    for (int i_miss = 0; i_miss < allMissiles.size(); ++i_miss)
+    for (int i_miss = 0; i_miss < allMissiles_SimCopy.size(); ++i_miss)
     {
-      MISSILE& m = allMissiles[i_miss];
+      MISSILE& m = allMissiles_SimCopy[i_miss];
 
       //if a missile collides, set the building's health and remove the missile.
       if ( (b.x == m.x) && (b.y == m.y) && (b.buildingOwner != m.missileOwner))
@@ -371,11 +370,11 @@ void bot::ProcessHits(ACTION& action)
         //remove building if it's completely destroyed. 
         if (b.health <= 0)
         {
-          allBuildings.erase(allBuildings.begin() + i_build);
+          allBuildings_SimCopy.erase(allBuildings_SimCopy.begin() + i_build);
         }
 
         //remove the missile.
-        allMissiles.erase(allMissiles.begin() + i_miss);
+        allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + i_miss);
 
         //only one missile can hit a building per turn.
         break;
@@ -387,9 +386,9 @@ void bot::ProcessHits(ACTION& action)
 
 void bot::MoveMissiles()
 {
-  for (int i = 0; i < allMissiles.size(); ++i)
+  for (int i = 0; i < allMissiles_SimCopy.size(); ++i)
   {
-    MISSILE& m = allMissiles[i];
+    MISSILE& m = allMissiles_SimCopy[i];
 
     if (m.missileOwner == "A")
     {
@@ -404,9 +403,9 @@ void bot::MoveMissiles()
 
 void bot::SpawnMissiles()
 {
-  for (int i = 0; i < allBuildings.size(); ++i)
+  for (int i = 0; i < allBuildings_SimCopy.size(); ++i)
   {
-    BUILDING& b = allBuildings[i];
+    BUILDING& b = allBuildings_SimCopy[i];
 
     if (b.buildingType[0] == 'A')
     {
@@ -418,7 +417,7 @@ void bot::SpawnMissiles()
         m.x = b.x;
         m.y = b.y;
         m.missileOwner = b.buildingOwner;
-        allMissiles.push_back(m);
+        allMissiles_SimCopy.push_back(m);
         b.weaponCooldownTimeLeft = b.weaponCooldownPeriod;
       }
       else
@@ -432,9 +431,9 @@ void bot::SpawnMissiles()
 void bot::ConstructBuildings()
 {
 
-  for (int i = 0; i < allBuildings.size(); ++i)
+  for (int i = 0; i < allBuildings_SimCopy.size(); ++i)
   {
-    BUILDING b = allBuildings[i];
+    BUILDING b = allBuildings_SimCopy[i];
 
     if (b.constructionTimeLeft == 0)
     {
@@ -554,7 +553,7 @@ void bot::PlaceBuilding(ACTION& action)
 
   tempEnergy_Me -= b.price;
 
-  allBuildings.push_back(b);
+  allBuildings_SimCopy.push_back(b);
 }
 
 int bot::GetBuildingCostFromAction(BUILD_ACTION& ba)
@@ -577,10 +576,13 @@ int bot::GetBuildingCostFromAction(BUILD_ACTION& ba)
   return 0;
 }
 
-void bot::SimulateAction(ACTION& action, int steps)
+void bot::SimulateAction(ACTION action, int steps)
 {
   //Create a copy of the field for editing during simulation. 
   //CreateCopyOfField();
+
+  allBuildings_SimCopy  = allBuildings;
+  allMissiles_SimCopy   = allMissiles;
 
   tempEnergy_Me       = me.energy;
   tempEnergy_Opponent = opponent.energy;
@@ -607,9 +609,13 @@ void bot::SimulateAction(ACTION& action, int steps)
 //n steps = possibly the length of the map, or rounds remaining (whichever is smaller) OR some other value liek 10 lel
 //Keep track of the highest difference in yours vs enemy's score. That is, you will want to know which move maximised the score diff.
 //Set the best action and return.
-void bot::SimulateActionableCells()
+ERROR_CODE bot::SimulateActionableCells()
 {
+  //AL.
+  //TODO
+  //Should probably calculate this value more intelligently...
   int stepsToSimulate = map_width;
+
   if (maxTurns > 0)
   {
     if ((round + stepsToSimulate) > maxTurns)
@@ -618,6 +624,10 @@ void bot::SimulateActionableCells()
     }
   }
 
+  //AL.
+  //TODO
+  //Hmm, we should set some timers so that we don't exceed kMaxRuntimeMillis.
+  //Must return TIMEOUT if times out.
   for (const XY cell : actionableCells)
   {
     for (BUILD_ACTION buildAction : possibleBuildActions)
@@ -631,6 +641,8 @@ void bot::SimulateActionableCells()
       allResultingActions.push_back(action);
     }
   }
+
+  return OKAY;
 }
 
 void bot::RandomiseActionableCells()
@@ -670,11 +682,11 @@ void bot::SetPossibleBuildActions()
   }
 }
 
-void bot::SetBestAction()
+ERROR_CODE bot::SetBestAction()
 {
   if (actionableCells.size() == 0)
   {
-    return;
+    return FAIL_NO_WORK;
   }
 
   bestAction.buildAction = NONE;
@@ -683,7 +695,7 @@ void bot::SetBestAction()
   SetPossibleBuildActions();
   if (possibleBuildActions.size() == 0)
   {
-    return;
+    return FAIL_NO_WORK;
   }
 
   //Randomise order of actionable rows so bot isn't too predictable 
@@ -691,9 +703,11 @@ void bot::SetBestAction()
   RandomiseActionableCells();
 
   //Run the sim on each actionable row and set a list of actions.
-  SimulateActionableCells();
-
+  ERROR_CODE er = SimulateActionableCells();
+  
   SelectBestActionFromAllActions();
+
+  return er;
 }
 
 ////////////////
@@ -767,10 +781,10 @@ void bot::PrintField(CELL** myField)
 #endif
 }
 
-void bot::PrintAllMissiles()
+void bot::PrintAllMissiles(vector<MISSILE> myMissiles)
 {
 #ifdef DEBUG
-  for (MISSILE m : allMissiles)
+  for (MISSILE m : myMissiles)
   {
     cout << m.missileOwner << "[" << m.x << "," << m.y << "]" << " ";
   }
@@ -798,14 +812,14 @@ int main()
 {
   if (InitialiseFromJSON() == false)
   {
-    return -1;
+    return FAIL_OUTRIGHT;
   }
 
-  SetBestAction();
+  ERROR_CODE er = SetBestAction();
 
   WriteBestActionToFile();
 
   //DeleteField(field);
 
-  return 0;
+  return er;
 }
