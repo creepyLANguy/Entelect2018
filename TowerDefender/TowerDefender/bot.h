@@ -37,10 +37,10 @@ namespace bot
 
   enum ERROR_CODE
   {
-    FAIL_OUTRIGHT = -1,
-    FAIL_NO_WORK  = 0,
-    OKAY          = 1,
-    TIMEOUT       = 2,
+    FAIL_JSON_PARSE = -1,
+    FAIL_CANT_PLAY  = 0,
+    OKAY            = 1,
+    TIMEOUT         = 2,
   };
 
   ///////////////////////////////////////
@@ -116,11 +116,7 @@ namespace bot
   const string kStateFileName   = "state.json";
   const string kOutputFileName  = "command.txt";
   
-  int kRowByteSize = -1; //Yeah okay, we set this later...
-  
-  int kHalfMapWidth = -1; //and this one, too...
-
-  int kMarginalScoreDiff = 5;
+  int kHalfMapWidth = -1; //Yeah okay, we set this later in ReadGameDetails()...
 
   ///////////////////////////////////////
   //MEMBERS 
@@ -161,31 +157,24 @@ namespace bot
   int maxTurns        = -1;
   int round           = -1;
 
-  PLAYER me;
-  PLAYER opponent;
-
-  int tempScore_Me        = 0;
-  int tempScore_Opponent  = 0;
-
-  int tempEnergy_Me       = 0;
-  int tempEnergy_Opponent = 0;
-
-  //CELL** field_original = nullptr;
-  //CELL** field_copy = nullptr;
-
   json j = nullptr;
-
-  vector<BUILD_ACTION> possibleBuildActions;
-
-  vector<XY> actionableCells;
-
-  vector<ACTION> allResultingActions;
 
   vector<BUILDING> allBuildings;
   vector<BUILDING> allBuildings_SimCopy;
 
   vector<MISSILE> allMissiles;
   vector<MISSILE> allMissiles_SimCopy;
+
+  PLAYER me;
+  PLAYER opponent;
+
+  vector<XY> actionableCells_Me;
+  vector<XY> actionableCells_Opponent;
+
+  vector<BUILD_ACTION> possibleBuildActions_Me;
+  vector<BUILD_ACTION> possibleBuildActions_Opponent;
+
+  vector<ACTION> allResultingActions;
 
   ACTION bestAction;
 
@@ -205,26 +194,25 @@ namespace bot
 
   //GAME LOGIC
   ERROR_CODE SetBestAction();
-  void SetPossibleBuildActions();
+  void SetPossibleBuildActions(PLAYER& player, vector<BUILD_ACTION>& possibleBuildActions);
   void RandomiseActionableCells();
   ERROR_CODE SimulateActionableCells();
   void SimulateAction(ACTION action, int steps);
   int GetBuildingCostFromAction(BUILD_ACTION& ba);
-  //void CreateCopyOfField();
-  void PlaceBuilding(ACTION& action);
-  void RunSteps(const int steps, ACTION& action);
-  void ConstructBuildings();
+  int PlaceBuilding(ACTION& action, const char owner);
+  void RunSteps(const int steps, ACTION& action, int& tempEnergy_Me, int& tempEnergy_Opponent);
+  void ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent);
   void SpawnMissiles();
   void MoveMissiles();
-  void ProcessHits(ACTION& action);
+  void ProcessHits(ACTION& action, int& tempScore_Me, int& tempScore_Opponent);
   void ReduceConstructionTimeLeft();
-  void AwardEnergy();
+  void AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent);
   void SelectBestActionFromAllActions();
 
   //UTILS
-  void PrintField(CELL** myField);
+#ifdef DEBUG
   void PrintAllMissiles(vector<MISSILE> myMissiles);
-  void DeleteField(CELL** myField);
+#endif
 
 }
 

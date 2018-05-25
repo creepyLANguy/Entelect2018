@@ -10,10 +10,6 @@
 #include <random>
 #include <fstream>
 
-#ifdef DEBUG
-#include <iostream>
-#endif
-
 #include "bot.h"
 using namespace bot;
 
@@ -29,8 +25,6 @@ void bot::ReadGameDetails()
   map_height    = jg["mapHeight"];
   round         = jg["round"];
   energyPerTurn = jg["roundIncomeEnergy"];
-
-  kRowByteSize = map_width * sizeof(CELL);
   
   kHalfMapWidth = (map_width / 2);
 
@@ -98,35 +92,26 @@ void bot::ReadPlayerDetails()
 
 void bot::ReadMap()
 {
-  /*
-  field_original = new CELL*[map_height];
-  for (int i = 0; i < map_height; ++i)
-  {
-    field_original[i] = new CELL[map_width];
-  }
-  */
 
   for (int row = 0; row < map_height; ++row)
   {
     for (int col = 0; col < map_width; ++col)
     {
-      /*
-      json jg                             = j["gameMap"][row][col];
-      field_original[row][col].x          = jg["x"];
-      field_original[row][col].y          = jg["y"];
-      field_original[row][col].cellOwner  = jg["cellOwner"].get<string>();
-      */
-
       const size_t buildingCount = j["gameMap"][row][col]["buildings"].size();
 
       if (buildingCount == 0)
       {
+        XY xy;
+        xy.x = col;
+        xy.y = row;
+
         if (col < kHalfMapWidth)
         {
-          XY xy;
-          xy.x = col;
-          xy.y = row;
-          actionableCells.push_back(xy);
+          actionableCells_Me.push_back(xy);
+        }
+        else
+        {
+          actionableCells_Opponent.push_back(xy);
         }
       }
       else
@@ -150,8 +135,6 @@ void bot::ReadMap()
           b.x                       = jb["x"];
           b.y                       = jb["y"];
           b.buildingOwner           = jb["playerType"].get<string>();
-
-          //field_original[row][col].buildings.push_back(b);
 
           allBuildings.push_back(b);
         }
@@ -206,6 +189,11 @@ bool bot::InitialiseFromJSON()
 //GAME LOGIC//
 /////////////
 
+//AL.
+//TODO
+//If we manage to sim all of the opponents actions vs ours,
+//we'll likely end up with each action having a set of scores/deaths, not just one. 
+//Need to redesign this to select based on all of that info.
 void bot::SelectBestActionFromAllActions()
 {
   ACTION currentAction = allResultingActions.front();
@@ -267,7 +255,7 @@ void bot::SelectBestActionFromAllActions()
   bestAction = currentAction;
 }
 
-void bot::AwardEnergy()
+void bot::AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent)
 {
   int energyBuildingCount_Me = 0;
   int energyBuildingCount_Opponent = 0;
@@ -300,7 +288,7 @@ void bot::ReduceConstructionTimeLeft()
   }
 }
 
-void bot::ProcessHits(ACTION& action)
+void bot::ProcessHits(ACTION& action, int& tempScore_Me, int& tempScore_Opponent)
 {
 
   //remove missiles that hit a base and reduce player health.
@@ -428,7 +416,7 @@ void bot::SpawnMissiles()
   }
 }
 
-void bot::ConstructBuildings()
+void bot::ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent)
 {
 
   for (int i = 0; i < allBuildings_SimCopy.size(); ++i)
@@ -464,17 +452,18 @@ void bot::ConstructBuildings()
     }
 
   }
+
 }
 
-void bot::RunSteps(const int steps, ACTION& action)
+void bot::RunSteps(const int steps, ACTION& action, int& tempEnergy_Me, int& tempEnergy_Opponent)
 {
-  tempScore_Me        = 0;
-  tempScore_Opponent  = 0;
+  int tempScore_Me        = 0;
+  int tempScore_Opponent  = 0;
 
   for (int i = 0; i < steps; ++i)
   {
     //If any have zero time remaining to be built. 
-    ConstructBuildings();
+    ConstructBuildings(tempScore_Me, tempScore_Opponent);
 
     //Missiles will be generated from any attack buildings if they can fire that turn.
     SpawnMissiles();
@@ -485,34 +474,22 @@ void bot::RunSteps(const int steps, ACTION& action)
     //Each missile will hit a building if it hit it during the movement phase.
     //Also remove missiles that have left the map and destroyed buildings/missiles.
     //Don't forget to affect the scores. 
-    ProcessHits(action);
+    ProcessHits(action, tempScore_Me, tempScore_Opponent);
 
-    //Note, this will influence the building states for the next round.
+    //Note, this will influence the building states for the sunsequent steps.
     ReduceConstructionTimeLeft(); 
 
     //Energy will be awarded, based on the baseline amount received and the number of energy buildings a player has.
-    AwardEnergy();
+    AwardEnergy(tempEnergy_Me, tempEnergy_Opponent);
   }
 
   action.scoreDiff = (tempScore_Me - tempScore_Opponent);
 }
 
-/*
-void bot::CreateCopyOfField()
-{
-  field_copy = new CELL*[map_height];
-  for (int i = 0; i < map_height; ++i)
-  {
-    field_copy[i] = new CELL[map_width];
-    memcpy(field_copy[i], field_original[i], kRowByteSize);
-  }
-}
-*/
-
-void bot::PlaceBuilding(ACTION& action)
+int bot::PlaceBuilding(ACTION& action, const char owner)
 {
   BUILDING b;
-  b.buildingOwner = "A";
+  b.buildingOwner = owner;
   b.x             = action.x;
   b.y             = action.y;
 
@@ -551,9 +528,9 @@ void bot::PlaceBuilding(ACTION& action)
     b.buildingType            = underConstructionCharacter_defense;
   }
 
-  tempEnergy_Me -= b.price;
-
   allBuildings_SimCopy.push_back(b);
+
+  return b.price;
 }
 
 int bot::GetBuildingCostFromAction(BUILD_ACTION& ba)
@@ -578,34 +555,30 @@ int bot::GetBuildingCostFromAction(BUILD_ACTION& ba)
 
 void bot::SimulateAction(ACTION action, int steps)
 {
-  //Create a copy of the field for editing during simulation. 
-  //CreateCopyOfField();
-
   allBuildings_SimCopy  = allBuildings;
   allMissiles_SimCopy   = allMissiles;
 
-  tempEnergy_Me       = me.energy;
-  tempEnergy_Opponent = opponent.energy;
+  int tempEnergy_Me       = me.energy;
+  int tempEnergy_Opponent = opponent.energy;
 
   if (action.buildAction < NONE)
   {
     const int actionCost = GetBuildingCostFromAction(action.buildAction);
     while (tempEnergy_Me < actionCost)
     {
-      RunSteps(1, action);
+      RunSteps(1, action, tempEnergy_Me, tempEnergy_Opponent);
       --steps;
     }
     action.buildAction = static_cast<BUILD_ACTION>(action.buildAction + SHIFTER);
   }
 
-  PlaceBuilding(action);
+  tempEnergy_Me -= PlaceBuilding(action, 'A');
 
-  RunSteps(steps, action);
-
-  //DeleteField(fieldCopy);  
+  RunSteps(steps, action, tempEnergy_Me, tempEnergy_Opponent);
 }
 
-//For each playable row, for each cell, simulate every possible action, for n steps.
+//For each playable row, for n steps, for each of my actionable cells, 
+//simulate every possible action I may take, against every possible action the opponent may take.
 //n steps = possibly the length of the map, or rounds remaining (whichever is smaller) OR some other value liek 10 lel
 //Keep track of the highest difference in yours vs enemy's score. That is, you will want to know which move maximised the score diff.
 //Set the best action and return.
@@ -628,9 +601,13 @@ ERROR_CODE bot::SimulateActionableCells()
   //TODO
   //Hmm, we should set some timers so that we don't exceed kMaxRuntimeMillis.
   //Must return TIMEOUT if times out.
-  for (const XY cell : actionableCells)
+  //
+  //ACTUALLY - Palin suggested executing the sims in parallel for a duration if time,
+  //then choose the best action from whatever you've managed to sim in that time. 
+  //
+  for (const XY cell : actionableCells_Me)
   {
-    for (BUILD_ACTION buildAction : possibleBuildActions)
+    for (BUILD_ACTION buildAction : possibleBuildActions_Me)
     {
       ACTION action;
       action.x = cell.x;
@@ -649,12 +626,14 @@ void bot::RandomiseActionableCells()
 {
   random_device rd;
   mt19937 g(rd());
-  shuffle(actionableCells.begin(), actionableCells.end(), g);
+
+  shuffle(actionableCells_Me.begin(), actionableCells_Me.end(), g);
+  shuffle(actionableCells_Opponent.begin(), actionableCells_Opponent.end(), g);
 }
 
-void bot::SetPossibleBuildActions()
+void bot::SetPossibleBuildActions(PLAYER& player, vector<BUILD_ACTION>& possibleBuildActions)
 {
-  if (me.energy < cost_attack)
+  if (player.energy < cost_attack)
   {
     possibleBuildActions.push_back(WAIT_ATTACK);
   }
@@ -663,7 +642,7 @@ void bot::SetPossibleBuildActions()
     possibleBuildActions.push_back(BUILD_ATTACK);
   }
 
-  if (me.energy < cost_defense)
+  if (player.energy < cost_defense)
   {
     possibleBuildActions.push_back(WAIT_DEFENSE);
   }
@@ -672,7 +651,7 @@ void bot::SetPossibleBuildActions()
     possibleBuildActions.push_back(BUILD_DEFENSE);
   }
 
-  if (me.energy < cost_energy)
+  if (player.energy < cost_energy)
   {
     possibleBuildActions.push_back(WAIT_ENERGY);
   }
@@ -684,18 +663,20 @@ void bot::SetPossibleBuildActions()
 
 ERROR_CODE bot::SetBestAction()
 {
-  if (actionableCells.size() == 0)
+  if (actionableCells_Me.size() == 0)
   {
-    return FAIL_NO_WORK;
+    return FAIL_CANT_PLAY;
   }
 
   bestAction.buildAction = NONE;
 
   //i.e. Which buildings you have enough energy for.
-  SetPossibleBuildActions();
-  if (possibleBuildActions.size() == 0)
+  SetPossibleBuildActions(me, possibleBuildActions_Me);
+  SetPossibleBuildActions(opponent, possibleBuildActions_Opponent);
+
+  if (possibleBuildActions_Me.size() == 0)
   {
-    return FAIL_NO_WORK;
+    return FAIL_CANT_PLAY;
   }
 
   //Randomise order of actionable rows so bot isn't too predictable 
@@ -703,7 +684,7 @@ ERROR_CODE bot::SetBestAction()
   RandomiseActionableCells();
 
   //Run the sim on each actionable row and set a list of actions.
-  ERROR_CODE er = SimulateActionableCells();
+  const ERROR_CODE er = SimulateActionableCells();
   
   SelectBestActionFromAllActions();
 
@@ -737,72 +718,17 @@ void bot::WriteBestActionToFile()
 //UTILS//
 ////////
 
-void bot::PrintField(CELL** myField)
-{
 #ifdef DEBUG
-  for (int row = 0; row < map_height; ++row)
-  {
-    for (int col = 0; col < map_width ; ++col)
-    {
-      CELL c = myField[row][col];
-      
-      string buildingsString = "_";
-      for (BUILDING b : c.buildings)
-      {
-        if (b.buildingType.length()>0)
-        {
-          buildingsString = b.buildingType[0];
-        }
-      }
-
-      string missilesString = "";
-      for (MISSILE m : c.missiles)
-      {
-        if (m.missileOwner == "A")
-        {
-          missilesString += ">";
-        }
-        else if (m.missileOwner == "B")
-        {
-          missilesString+="<";
-        }
-      }
-
-      cout << " " << "[";
-      //cout << " " << "x:" << c.x << "y:" << c.y;
-      //cout << " " << "row:" << row << "col:" << col;
-      cout << " " << buildingsString;
-      //cout << " " << missilesString;
-      cout << " " << "]";
-    }
-    cout << endl;
-  }
-  cout << endl;
-#endif
-}
-
+#include <iostream>
 void bot::PrintAllMissiles(vector<MISSILE> myMissiles)
 {
-#ifdef DEBUG
   for (MISSILE m : myMissiles)
   {
     cout << m.missileOwner << "[" << m.x << "," << m.y << "]" << " ";
   }
   cout << endl << endl;
+}
 #endif
-}
-
-void bot::DeleteField(CELL** myField)
-{
-  if (myField != nullptr)
-  {
-    for (int row = 0; row < map_height; ++row)
-    {
-      delete[] myField[row];
-    }
-    delete[] myField;
-  }
-}
 
 /////////
 //MAIN//
@@ -812,10 +738,10 @@ int main()
 {
   if (InitialiseFromJSON() == false)
   {
-    return FAIL_OUTRIGHT;
+    return FAIL_JSON_PARSE;
   }
 
-  ERROR_CODE er = SetBestAction();
+  const ERROR_CODE er = SetBestAction();
 
   WriteBestActionToFile();
 
