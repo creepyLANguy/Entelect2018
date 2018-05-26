@@ -152,8 +152,6 @@ void bot::ReadMap()
         m.y             = jm["y"];
         m.missileOwner  = jm["playerType"].get<string>();
 
-        //field_original[row][col].missiles.push_back(m);
-
         allMissiles.push_back(m);
       }
 
@@ -191,13 +189,12 @@ bool bot::InitialiseFromJSON()
 
 //AL.
 //TODO
-//If we manage to sim all of the opponents actions vs ours,
-//we'll likely end up with each action having a set of scores/deaths, not just one. 
-//Need to redesign this to select based on all of that info.
+//FIX!!!
 void bot::SelectBestActionFromAllActions()
 {
   ACTION currentAction = allResultingActions.front();
 
+  /*
   for (const ACTION newAction : allResultingActions)
   {
 
@@ -251,6 +248,7 @@ void bot::SelectBestActionFromAllActions()
     }
 
   }
+  */
 
   bestAction = currentAction;
 }
@@ -455,10 +453,8 @@ void bot::ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent)
 
 }
 
-void bot::RunSteps(const int steps, ACTION& action, int& tempEnergy_Me, int& tempEnergy_Opponent)
+void bot::RunSteps(const int steps, ACTION& action, int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent)
 {
-  int tempScore_Me        = 0;
-  int tempScore_Opponent  = 0;
 
   for (int i = 0; i < steps; ++i)
   {
@@ -483,7 +479,6 @@ void bot::RunSteps(const int steps, ACTION& action, int& tempEnergy_Me, int& tem
     AwardEnergy(tempEnergy_Me, tempEnergy_Opponent);
   }
 
-  action.scoreDiff = (tempScore_Me - tempScore_Opponent);
 }
 
 int bot::PlaceBuilding(ACTION& action, const char owner)
@@ -553,7 +548,7 @@ int bot::GetBuildingCostFromAction(BUILD_ACTION& ba)
   return 0;
 }
 
-void bot::SimulateAction(ACTION action, int steps)
+void bot::SimulateAction(ACTION& action_Me, ACTION& action_Opponent, int steps)
 {
   allBuildings_SimCopy  = allBuildings;
   allMissiles_SimCopy   = allMissiles;
@@ -561,24 +556,37 @@ void bot::SimulateAction(ACTION action, int steps)
   int tempEnergy_Me       = me.energy;
   int tempEnergy_Opponent = opponent.energy;
 
-  if (action.buildAction < NONE)
+  int tempScore_Me        = 0;
+  int tempScore_Opponent  = 0;
+
+  //AL.
+  //TODO
+  //Uhm, uh, okay, so:
+  //We need to get the amount of steps that I and the opponent must wait to build. 
+  //Then, inside runsteps, we check each step to see if that number is at zero for either. 
+  //if zero, upgrade the buildaction and place the building.
+  //otherwise we just keep on simulating. 
+  //So, all of this sorta thing can go inside runsteps():
+  if (action_Me.buildAction < NONE)
   {
-    const int actionCost = GetBuildingCostFromAction(action.buildAction);
+    const int actionCost = GetBuildingCostFromAction(action_Me.buildAction);
     while (tempEnergy_Me < actionCost)
     {
-      RunSteps(1, action, tempEnergy_Me, tempEnergy_Opponent);
+      RunSteps(1, action_Me, tempEnergy_Me, tempEnergy_Opponent, tempScore_Me, tempScore_Opponent);
       --steps;
     }
-    action.buildAction = static_cast<BUILD_ACTION>(action.buildAction + SHIFTER);
+    action_Me.buildAction = static_cast<BUILD_ACTION>(action_Me.buildAction + SHIFTER);
   }
+  tempEnergy_Me -= PlaceBuilding(action_Me, 'A');
+  //
 
-  tempEnergy_Me -= PlaceBuilding(action, 'A');
+  RunSteps(steps, action_Me, tempEnergy_Me, tempEnergy_Opponent, tempScore_Me, tempScore_Opponent);
 
-  RunSteps(steps, action, tempEnergy_Me, tempEnergy_Opponent);
+  action_Me.scoreDiffs.push_back((tempScore_Me - tempScore_Opponent));
 }
 
 //For each playable row, for n steps, for each of my actionable cells, 
-//simulate every possible action I may take, against every possible action the opponent may take.
+//simulate every possible action of mine, against every possible action theirs.
 //n steps = possibly the length of the map, or rounds remaining (whichever is smaller) OR some other value liek 10 lel
 //Keep track of the highest difference in yours vs enemy's score. That is, you will want to know which move maximised the score diff.
 //Set the best action and return.
@@ -605,17 +613,29 @@ ERROR_CODE bot::SimulateActionableCells()
   //ACTUALLY - Palin suggested executing the sims in parallel for a duration if time,
   //then choose the best action from whatever you've managed to sim in that time. 
   //
-  for (const XY cell : actionableCells_Me)
+  for (const XY cell_Me : actionableCells_Me)
   {
-    for (BUILD_ACTION buildAction : possibleBuildActions_Me)
+    for (BUILD_ACTION buildAction_Me : possibleBuildActions_Me)
     {
-      ACTION action;
-      action.x = cell.x;
-      action.y = cell.y;
-      action.buildAction = buildAction;
-      SimulateAction(action, stepsToSimulate);
+      ACTION action_Me;
+      action_Me.x = cell_Me.x;
+      action_Me.y = cell_Me.y;
+      action_Me.buildAction = buildAction_Me;
 
-      allResultingActions.push_back(action);
+      for (const XY cell_Opponent : actionableCells_Opponent)
+      {
+        for (BUILD_ACTION buildAction_Opponent : possibleBuildActions_Opponent)
+        {
+          ACTION action_Opponent;
+          action_Opponent.x           = cell_Opponent.x;
+          action_Opponent.y           = cell_Opponent.y;
+          action_Opponent.buildAction = buildAction_Opponent;
+
+          SimulateAction(action_Me, action_Opponent, stepsToSimulate);
+        }        
+      }
+
+      allResultingActions.push_back(action_Me);
     }
   }
 
@@ -744,8 +764,6 @@ int main()
   const ERROR_CODE er = SetBestAction();
 
   WriteBestActionToFile();
-
-  //DeleteField(field);
 
   return er;
 }

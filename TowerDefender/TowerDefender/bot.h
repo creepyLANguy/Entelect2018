@@ -97,7 +97,7 @@ namespace bot
     int x = -1;
     int y = -1;
     BUILD_ACTION buildAction = NONE;
-    int scoreDiff = 0;
+    vector<int> scoreDiffs;
     bool resultsInDeath_Me = false;
     bool resultsInDeath_Opponent = false;
   };
@@ -197,10 +197,10 @@ namespace bot
   void SetPossibleBuildActions(PLAYER& player, vector<BUILD_ACTION>& possibleBuildActions);
   void RandomiseActionableCells();
   ERROR_CODE SimulateActionableCells();
-  void SimulateAction(ACTION action, int steps);
+  void SimulateAction(ACTION& action_Me, ACTION& action_Opponent, int steps);
   int GetBuildingCostFromAction(BUILD_ACTION& ba);
   int PlaceBuilding(ACTION& action, const char owner);
-  void RunSteps(const int steps, ACTION& action, int& tempEnergy_Me, int& tempEnergy_Opponent);
+  void RunSteps(const int steps, ACTION& action, int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent);
   void ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent);
   void SpawnMissiles();
   void MoveMissiles();
