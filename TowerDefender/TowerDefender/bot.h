@@ -43,6 +43,14 @@ namespace bot
     TIMEOUT         = 2,
   };
 
+  enum DEATH_RESULT
+  {
+    ME        = -1,
+    NEITHER   = 0,
+    OPPONENT  = 1,
+    BOTH      = 2,
+  };
+
   ///////////////////////////////////////
   //STRUCTS 
   ///////////////////////////////////////
@@ -97,9 +105,10 @@ namespace bot
     int x = -1;
     int y = -1;
     BUILD_ACTION buildAction = NONE;
+    int associatedBuildCost = -1;
     vector<int> scoreDiffs;
-    bool resultsInDeath_Me = false;
-    bool resultsInDeath_Opponent = false;
+    int deathCount_Me = 0;
+    int deathCount_Opponent = 0;
   };
 
   struct XY
@@ -197,14 +206,14 @@ namespace bot
   void SetPossibleBuildActions(PLAYER& player, vector<BUILD_ACTION>& possibleBuildActions);
   void RandomiseActionableCells();
   ERROR_CODE SimulateActionableCells();
-  void SimulateAction(ACTION& action_Me, ACTION& action_Opponent, int steps);
-  int GetBuildingCostFromAction(BUILD_ACTION& ba);
+  void SimulateAction(ACTION& action_Me, ACTION& action_Opponent, const int steps);
+  int GetBuildingCostFromWaitAction(BUILD_ACTION& ba);
+  DEATH_RESULT RunSteps(const int steps, ACTION& action_Me, ACTION& action_Opponent, int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent);
   int PlaceBuilding(ACTION& action, const char owner);
-  void RunSteps(const int steps, ACTION& action, int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent);
   void ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent);
   void SpawnMissiles();
   void MoveMissiles();
-  void ProcessHits(ACTION& action, int& tempScore_Me, int& tempScore_Opponent);
+  DEATH_RESULT ProcessHits(int& tempScore_Me, int& tempScore_Opponent);
   void ReduceConstructionTimeLeft();
   void AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent);
   void SelectBestActionFromAllActions();

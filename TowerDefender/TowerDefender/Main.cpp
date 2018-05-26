@@ -286,38 +286,8 @@ void bot::ReduceConstructionTimeLeft()
   }
 }
 
-void bot::ProcessHits(ACTION& action, int& tempScore_Me, int& tempScore_Opponent)
+DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent)
 {
-
-  //remove missiles that hit a base and reduce player health.
-  for (int im = 0; im < allMissiles_SimCopy.size(); ++im)
-  {
-    MISSILE& m = allMissiles_SimCopy[im];
-
-    if (m.x < 0)
-    {
-      me.health -= m.damage;
-      tempScore_Opponent += (m.damage * 100);
-    }
-    else if (m.x >= map_width)
-    {
-      opponent.health -= m.damage;
-      tempScore_Me += (m.damage * 100);
-    }
-
-    allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + im);
-  }
-
-  //flag any resulting deaths.
-  if (me.health <= 0)
-  {
-    action.resultsInDeath_Me = true;
-  }
-  if (opponent.health <= 0)
-  {
-    action.resultsInDeath_Opponent = true;
-  }
-
   //for each building, see if each missile collides.
   for (int i_build = 0; i_build < allBuildings_SimCopy.size(); ++i_build)
   {
@@ -368,6 +338,42 @@ void bot::ProcessHits(ACTION& action, int& tempScore_Me, int& tempScore_Opponent
     }
   }
 
+  //remove missiles that hit a base and reduce player health.
+  for (int im = 0; im < allMissiles_SimCopy.size(); ++im)
+  {
+    MISSILE& m = allMissiles_SimCopy[im];
+
+    if (m.x < 0)
+    {
+      me.health -= m.damage;
+      tempScore_Opponent += (m.damage * 100);
+    }
+    else if (m.x >= map_width)
+    {
+      opponent.health -= m.damage;
+      tempScore_Me += (m.damage * 100);
+    }
+
+    allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + im);
+  }
+
+  //flag any resulting deaths.
+  if ((me.health <= 0) && (opponent.health <= 0))
+  {
+    return BOTH;
+  }
+
+  if (me.health <= 0)
+  {
+    return ME;
+  }
+
+  if (opponent.health <= 0)
+  {
+    return OPPONENT;
+  }
+
+  return NEITHER;
 }
 
 void bot::MoveMissiles()
@@ -453,34 +459,6 @@ void bot::ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent)
 
 }
 
-void bot::RunSteps(const int steps, ACTION& action, int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent)
-{
-
-  for (int i = 0; i < steps; ++i)
-  {
-    //If any have zero time remaining to be built. 
-    ConstructBuildings(tempScore_Me, tempScore_Opponent);
-
-    //Missiles will be generated from any attack buildings if they can fire that turn.
-    SpawnMissiles();
-
-    //The missiles will be immediately moved, based on their speed.
-    MoveMissiles();
-
-    //Each missile will hit a building if it hit it during the movement phase.
-    //Also remove missiles that have left the map and destroyed buildings/missiles.
-    //Don't forget to affect the scores. 
-    ProcessHits(action, tempScore_Me, tempScore_Opponent);
-
-    //Note, this will influence the building states for the sunsequent steps.
-    ReduceConstructionTimeLeft(); 
-
-    //Energy will be awarded, based on the baseline amount received and the number of energy buildings a player has.
-    AwardEnergy(tempEnergy_Me, tempEnergy_Opponent);
-  }
-
-}
-
 int bot::PlaceBuilding(ACTION& action, const char owner)
 {
   BUILDING b;
@@ -528,7 +506,57 @@ int bot::PlaceBuilding(ACTION& action, const char owner)
   return b.price;
 }
 
-int bot::GetBuildingCostFromAction(BUILD_ACTION& ba)
+DEATH_RESULT bot::RunSteps(const int steps, ACTION& action_Me, ACTION& action_Opponent, int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent)
+{
+  DEATH_RESULT res = NEITHER;
+
+  for (int i = 0; i < steps; ++i)
+  {
+
+    if (action_Me.buildAction < NONE)
+    {
+      if(action_Me.associatedBuildCost < tempEnergy_Me)
+      {
+        action_Me.buildAction = static_cast<BUILD_ACTION>(action_Me.buildAction + SHIFTER);
+        tempEnergy_Me -= PlaceBuilding(action_Me, 'A');
+      }
+    }
+
+    if (action_Opponent.buildAction < NONE)
+    {
+      if (action_Opponent.associatedBuildCost < tempEnergy_Opponent)
+      {
+        action_Opponent.buildAction = static_cast<BUILD_ACTION>(action_Opponent.buildAction + SHIFTER);
+        tempEnergy_Opponent -= PlaceBuilding(action_Opponent, 'B');
+      }
+    }
+
+
+    //If any have zero time remaining to be built. 
+    ConstructBuildings(tempScore_Me, tempScore_Opponent);
+
+    //Missiles will be generated from any attack buildings if they can fire that turn.
+    SpawnMissiles();
+
+    //The missiles will be immediately moved, based on their speed.
+    MoveMissiles();
+
+    //Each missile will hit a building if it hit it during the movement phase.
+    //Also remove missiles that have left the map and destroyed buildings/missiles.
+    //Don't forget to affect the scores. 
+    res = ProcessHits(tempScore_Me, tempScore_Opponent);
+
+    //Note, this will influence the building states for the sunsequent steps.
+    ReduceConstructionTimeLeft(); 
+
+    //Energy will be awarded, based on the baseline amount received and the number of energy buildings a player has.
+    AwardEnergy(tempEnergy_Me, tempEnergy_Opponent);
+  }
+
+  return res;
+}
+
+int bot::GetBuildingCostFromWaitAction(BUILD_ACTION& ba)
 {
   if (ba == WAIT_ATTACK)
   {
@@ -559,28 +587,21 @@ void bot::SimulateAction(ACTION& action_Me, ACTION& action_Opponent, int steps)
   int tempScore_Me        = 0;
   int tempScore_Opponent  = 0;
 
-  //AL.
-  //TODO
-  //Uhm, uh, okay, so:
-  //We need to get the amount of steps that I and the opponent must wait to build. 
-  //Then, inside runsteps, we check each step to see if that number is at zero for either. 
-  //if zero, upgrade the buildaction and place the building.
-  //otherwise we just keep on simulating. 
-  //So, all of this sorta thing can go inside runsteps():
-  if (action_Me.buildAction < NONE)
-  {
-    const int actionCost = GetBuildingCostFromAction(action_Me.buildAction);
-    while (tempEnergy_Me < actionCost)
-    {
-      RunSteps(1, action_Me, tempEnergy_Me, tempEnergy_Opponent, tempScore_Me, tempScore_Opponent);
-      --steps;
-    }
-    action_Me.buildAction = static_cast<BUILD_ACTION>(action_Me.buildAction + SHIFTER);
-  }
-  tempEnergy_Me -= PlaceBuilding(action_Me, 'A');
-  //
+  const DEATH_RESULT res = RunSteps(steps, action_Me, action_Opponent, tempEnergy_Me, tempEnergy_Opponent, tempScore_Me, tempScore_Opponent);
 
-  RunSteps(steps, action_Me, tempEnergy_Me, tempEnergy_Opponent, tempScore_Me, tempScore_Opponent);
+  if (res == BOTH)
+  {
+    ++action_Me.deathCount_Me;
+    ++action_Me.deathCount_Opponent;
+  }
+  else if (res == ME)
+  {
+    ++action_Me.deathCount_Me;
+  }
+  else if (res == OPPONENT)
+  {
+    ++action_Me.deathCount_Opponent;
+  }
 
   action_Me.scoreDiffs.push_back((tempScore_Me - tempScore_Opponent));
 }
@@ -618,20 +639,25 @@ ERROR_CODE bot::SimulateActionableCells()
     for (BUILD_ACTION buildAction_Me : possibleBuildActions_Me)
     {
       ACTION action_Me;
-      action_Me.x = cell_Me.x;
-      action_Me.y = cell_Me.y;
-      action_Me.buildAction = buildAction_Me;
+      action_Me.x                   = cell_Me.x;
+      action_Me.y                   = cell_Me.y;
+      action_Me.buildAction         = buildAction_Me;
+      action_Me.associatedBuildCost = GetBuildingCostFromWaitAction(action_Me.buildAction);
 
       for (const XY cell_Opponent : actionableCells_Opponent)
       {
         for (BUILD_ACTION buildAction_Opponent : possibleBuildActions_Opponent)
         {
           ACTION action_Opponent;
-          action_Opponent.x           = cell_Opponent.x;
-          action_Opponent.y           = cell_Opponent.y;
-          action_Opponent.buildAction = buildAction_Opponent;
+          action_Opponent.x                   = cell_Opponent.x;
+          action_Opponent.y                   = cell_Opponent.y;
+          action_Opponent.buildAction         = buildAction_Opponent;
+          action_Opponent.associatedBuildCost = GetBuildingCostFromWaitAction(action_Opponent.buildAction);
 
           SimulateAction(action_Me, action_Opponent, stepsToSimulate);
+
+          //Reset this as it would have been changed during sim.
+          action_Me.buildAction = buildAction_Me;
         }        
       }
 
