@@ -205,9 +205,11 @@ namespace bot
   ERROR_CODE SetBestAction();
   void SetPossibleBuildActions(PLAYER& player, vector<BUILD_ACTION>& possibleBuildActions);
   void RandomiseActionableCells();
+  
   ERROR_CODE SimulateActionableCells();
   void SimulateAction(ACTION& action_Me, ACTION& action_Opponent, const int steps);
   int GetBuildingCostFromWaitAction(BUILD_ACTION& ba);
+
   DEATH_RESULT RunSteps(const int steps, ACTION& action_Me, ACTION& action_Opponent, int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent);
   int PlaceBuilding(ACTION& action, const char owner);
   void ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent);
@@ -216,6 +218,7 @@ namespace bot
   DEATH_RESULT ProcessHits(int& tempScore_Me, int& tempScore_Opponent);
   void ReduceConstructionTimeLeft();
   void AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent);
+  
   void SelectBestActionFromAllActions();
 
   //UTILS
