@@ -253,7 +253,7 @@ void bot::SelectBestActionFromAllActions()
   bestAction = currentAction;
 }
 
-void bot::AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent)
+void bot::AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent)
 {
   int energyBuildingCount_Me = 0;
   int energyBuildingCount_Opponent = 0;
@@ -276,6 +276,9 @@ void bot::AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent)
 
   tempEnergy_Me       += (energyPerTurn + energyGenerated_Me);
   tempEnergy_Opponent += (energyPerTurn + energyGenerated_Opponent);
+
+  tempScore_Me += energyGenerated_Me;
+  tempScore_Opponent += energyGenerated_Opponent;
 }
 
 void bot::ReduceConstructionTimeLeft()
@@ -308,7 +311,7 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent)
       MISSILE& m = allMissiles_SimCopy[i_miss];
 
       //if a missile collides, set the building's health and remove the missile.
-      if ( (b.x == m.x) && (b.y == m.y) && (b.buildingOwner != m.missileOwner))
+      if ((b.x == m.x) && (b.y == m.y) && (b.buildingOwner != m.missileOwner))
       {
         b.health -= m.damage;
 
@@ -338,6 +341,7 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent)
     }
   }
 
+
   //remove missiles that hit a base and reduce player health.
   for (int im = 0; im < allMissiles_SimCopy.size(); ++im)
   {
@@ -347,14 +351,16 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent)
     {
       me.health -= m.damage;
       tempScore_Opponent += (m.damage * 100);
+
+      allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + im);
     }
     else if (m.x >= map_width)
     {
       opponent.health -= m.damage;
       tempScore_Me += (m.damage * 100);
-    }
 
-    allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + im);
+      allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + im);
+    }
   }
 
   //flag any resulting deaths.
@@ -410,6 +416,7 @@ void bot::SpawnMissiles()
         m.y = b.y;
         m.missileOwner = b.buildingOwner;
         allMissiles_SimCopy.push_back(m);
+
         b.weaponCooldownTimeLeft = b.weaponCooldownPeriod;
       }
       else
@@ -425,7 +432,7 @@ void bot::ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent)
 
   for (int i = 0; i < allBuildings_SimCopy.size(); ++i)
   {
-    BUILDING b = allBuildings_SimCopy[i];
+    BUILDING& b = allBuildings_SimCopy[i];
 
     if (b.constructionTimeLeft == 0)
     {
@@ -443,6 +450,7 @@ void bot::ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent)
       if (b.buildingType[0] == 'a')
       {
         b.buildingType[0] = 'A';
+        b.weaponCooldownTimeLeft = 0; //So we can spawn the first missile instantly. 
       }
       else if (b.buildingType[0] == 'd')
       {
@@ -550,7 +558,7 @@ DEATH_RESULT bot::RunSteps(const int steps, ACTION& action_Me, ACTION& action_Op
     ReduceConstructionTimeLeft(); 
 
     //Energy will be awarded, based on the baseline amount received and the number of energy buildings a player has.
-    AwardEnergy(tempEnergy_Me, tempEnergy_Opponent);
+    AwardEnergy(tempEnergy_Me, tempEnergy_Opponent, tempScore_Me, tempScore_Opponent);
   }
 
   return res;
@@ -576,7 +584,7 @@ int bot::GetBuildingCostFromWaitAction(BUILD_ACTION& ba)
   return 0;
 }
 
-void bot::SimulateAction(ACTION& action_Me, ACTION& action_Opponent, int steps)
+void bot::SimulateAction(ACTION& action_Me, ACTION& action_Opponent, const int steps)
 {
   allBuildings_SimCopy  = allBuildings;
   allMissiles_SimCopy   = allMissiles;
@@ -616,7 +624,8 @@ ERROR_CODE bot::SimulateActionableCells()
   //AL.
   //TODO
   //Should probably calculate this value more intelligently...
-  int stepsToSimulate = map_width;
+  //int stepsToSimulate = map_width;
+  int stepsToSimulate = map_width * 3;
 
   if (maxTurns > 0)
   {

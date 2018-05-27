@@ -215,7 +215,7 @@ namespace bot
   void MoveMissiles();
   DEATH_RESULT ProcessHits(int& tempScore_Me, int& tempScore_Opponent);
   void ReduceConstructionTimeLeft();
-  void AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent);
+  void AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent);
   void SelectBestActionFromAllActions();
 
   //UTILS
