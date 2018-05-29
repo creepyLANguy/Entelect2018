@@ -554,7 +554,7 @@ DEATH_RESULT bot::RunSteps(const int steps, ACTION& action_Me, ACTION& action_Op
     //Don't forget to affect the scores. 
     res = ProcessHits(tempScore_Me, tempScore_Opponent);
 
-    //Note, this will influence the building states for the sunsequent steps.
+    //Note, this will influence the building states for the subsequent steps.
     ReduceConstructionTimeLeft(); 
 
     //Energy will be awarded, based on the baseline amount received and the number of energy buildings a player has.
