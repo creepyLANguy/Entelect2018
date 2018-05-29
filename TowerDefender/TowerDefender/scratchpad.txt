@@ -1,3 +1,29 @@
+stddev:
+/////////////////////////////////////////////////////////////////////////
+double sum = std::accumulate(std::begin(v), std::end(v), 0.0);
+double m =  sum / v.size();
+
+double accum = 0.0;
+std::for_each (std::begin(v), std::end(v), [&](const double d) {
+    accum += (d - m) * (d - m);
+});
+
+double stdev = sqrt(accum / (v.size()-1));
+////////////////////////////////////////////////////////////////////////////
+double std_var_stable (uint16_t a[], uint16_t n) {
+    if (n == 0) return 0;
+    unsigned i;
+    double mean = 0;
+    double M2 = 0;
+    for(i = 0; i < n; ++i) {
+       double delta = a[i] - mean;
+       mean += delta / (i + 1);
+       M2 += delta * (a[i] - mean);
+    }
+    return M2/n;
+}
+///////////////////////////////////////////////////////////////////////////////
+
 #include <chrono>
 #include <iostream>
 int main()
@@ -18,3 +44,4 @@ int main()
   
   return 0;
 }
+///////////////////////////////////////////////////////////////////////////////////
