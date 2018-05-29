@@ -183,75 +183,116 @@ bool bot::InitialiseFromJSON()
 }
 
 
-///////////////
-//GAME LOGIC//
-/////////////
+/////////////////////
+//ACTION SELECTION//
+///////////////////
+
+double bot::GetVariance(ACTION& action, const int averageScoreDiff)
+{
+  double variance = 0;
+
+  for (int scoreDiff : action.scoreDiffs)
+  {
+    variance += ((scoreDiff - averageScoreDiff) * (scoreDiff - averageScoreDiff)) / action.scoreDiffs.size();
+  }
+
+  return variance;
+}
 
 //AL.
 //TODO
-//FIX!!!
+//Test the formula...
+void bot::CalculateMagicNumbers()
+{
+  for (int i = 0; i < allResultingActions.size(); ++i)
+  {
+    ACTION action = allResultingActions[i];
+
+    const int averageScoreDiff = action.scoreDiffsTotal / action.scoreDiffs.size();
+    
+    const double standardDeviation = sqrt(GetVariance(action, averageScoreDiff));
+
+    double deathQuotient = 1;
+    if ((action.deathCount_Opponent > 0) && (action.deathCount_Me > 0))
+    {
+      deathQuotient = (action.deathCount_Opponent / action.deathCount_Me);
+    }
+    
+    allResultingActions[i].magicNumber = (averageScoreDiff / standardDeviation) * deathQuotient;
+  }
+}
+
 void bot::SelectBestActionFromAllActions()
 {
+  CalculateMagicNumbers();
+
   ACTION currentAction = allResultingActions.front();
+
+
 
   /*
   for (const ACTION newAction : allResultingActions)
   {
 
-    //Both options have same death scenarios.
-    if  (
-        (newAction.resultsInDeath_Me == currentAction.resultsInDeath_Me) &&
-        (newAction.resultsInDeath_Opponent == currentAction.resultsInDeath_Opponent)
-        )
-    {
-      //Take the action with best scorediff.
-      if (currentAction.scoreDiff > newAction.scoreDiff)
-      {
-        currentAction = newAction;
-      }
-    }
-  
-    //Neither player dies.
-    else if (
-            (newAction.resultsInDeath_Me == false) &&
-            (newAction.resultsInDeath_Opponent == false)
-            )
-    {
-      //Take the action with best scorediff.
-      if (newAction.scoreDiff > currentAction.scoreDiff)
-      {
-        currentAction = newAction;
-      }
-    }
+  //Both options have same death scenarios.
+  if  (
+  (newAction.resultsInDeath_Me == currentAction.resultsInDeath_Me) &&
+  (newAction.resultsInDeath_Opponent == currentAction.resultsInDeath_Opponent)
+  )
+  {
+  //Take the action with best scorediff.
+  if (currentAction.scoreDiff > newAction.scoreDiff)
+  {
+  currentAction = newAction;
+  }
+  }
 
-    //Only opponent dies. 
-    else if (
-            (newAction.resultsInDeath_Opponent == true) &&
-            (newAction.resultsInDeath_Me == false)
-            )
-    {
-      //Neither of us would have died, or only I would have died. 
-      if  (
-          ((currentAction.resultsInDeath_Me == false) && (currentAction.resultsInDeath_Opponent == false)) ||
-          (currentAction.resultsInDeath_Me == true)
-          )
-      {
-        currentAction = newAction;
-      }
-    }
-    
-    //Only I die, or we both die.     
-    else
-    {
-      //Ignore this action. It's shit. 
-      //Self preservation FTW.
-    }
+  //Neither player dies.
+  else if (
+  (newAction.resultsInDeath_Me == false) &&
+  (newAction.resultsInDeath_Opponent == false)
+  )
+  {
+  //Take the action with best scorediff.
+  if (newAction.scoreDiff > currentAction.scoreDiff)
+  {
+  currentAction = newAction;
+  }
+  }
+
+  //Only opponent dies.
+  else if (
+  (newAction.resultsInDeath_Opponent == true) &&
+  (newAction.resultsInDeath_Me == false)
+  )
+  {
+  //Neither of us would have died, or only I would have died.
+  if  (
+  ((currentAction.resultsInDeath_Me == false) && (currentAction.resultsInDeath_Opponent == false)) ||
+  (currentAction.resultsInDeath_Me == true)
+  )
+  {
+  currentAction = newAction;
+  }
+  }
+
+  //Only I die, or we both die.
+  else
+  {
+  //Ignore this action. It's shit.
+  //Self preservation FTW.
+  }
 
   }
   */
 
   bestAction = currentAction;
 }
+
+
+///////////////
+//GAME LOGIC//
+/////////////
 
 void bot::AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent)
 {
@@ -289,7 +330,7 @@ void bot::ReduceConstructionTimeLeft()
   }
 }
 
-DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent)
+DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& tempHealth_Me, int& tempHealth_Opponent)
 {
   //for each building, see if each missile collides.
   for (int i_build = 0; i_build < allBuildings_SimCopy.size(); ++i_build)
@@ -349,14 +390,14 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent)
 
     if (m.x < 0)
     {
-      me.health -= m.damage;
+      tempHealth_Me -= m.damage;
       tempScore_Opponent += (m.damage * 100);
 
       allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + im);
     }
     else if (m.x >= map_width)
     {
-      opponent.health -= m.damage;
+      tempHealth_Opponent -= m.damage;
       tempScore_Me += (m.damage * 100);
 
       allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + im);
@@ -364,17 +405,17 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent)
   }
 
   //flag any resulting deaths.
-  if ((me.health <= 0) && (opponent.health <= 0))
+  if ((tempHealth_Me <= 0) && (tempHealth_Opponent <= 0))
   {
     return BOTH;
   }
 
-  if (me.health <= 0)
+  if (tempHealth_Me <= 0)
   {
     return ME;
   }
 
-  if (opponent.health <= 0)
+  if (tempHealth_Opponent <= 0)
   {
     return OPPONENT;
   }
@@ -514,7 +555,12 @@ int bot::PlaceBuilding(ACTION& action, const char owner)
   return b.price;
 }
 
-DEATH_RESULT bot::RunSteps(const int steps, ACTION& action_Me, ACTION& action_Opponent, int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent)
+DEATH_RESULT bot::RunSteps(
+  const int steps, 
+  ACTION& action_Me, ACTION& action_Opponent, 
+  int& tempEnergy_Me, int& tempEnergy_Opponent, 
+  int& tempScore_Me, int& tempScore_Opponent, 
+  int& tempHealth_Me, int& tempHealth_Opponent)
 {
   DEATH_RESULT res = NEITHER;
 
@@ -552,13 +598,18 @@ DEATH_RESULT bot::RunSteps(const int steps, ACTION& action_Me, ACTION& action_Op
     //Each missile will hit a building if it hit it during the movement phase.
     //Also remove missiles that have left the map and destroyed buildings/missiles.
     //Don't forget to affect the scores. 
-    res = ProcessHits(tempScore_Me, tempScore_Opponent);
+    res = ProcessHits(tempScore_Me, tempScore_Opponent, tempHealth_Me, tempHealth_Opponent);
 
     //Note, this will influence the building states for the subsequent steps.
     ReduceConstructionTimeLeft(); 
 
     //Energy will be awarded, based on the baseline amount received and the number of energy buildings a player has.
     AwardEnergy(tempEnergy_Me, tempEnergy_Opponent, tempScore_Me, tempScore_Opponent);
+
+    if (res != NEITHER)
+    {
+      return res;
+    }
   }
 
   return res;
@@ -595,7 +646,16 @@ void bot::SimulateAction(ACTION& action_Me, ACTION& action_Opponent, const int s
   int tempScore_Me        = 0;
   int tempScore_Opponent  = 0;
 
-  const DEATH_RESULT res = RunSteps(steps, action_Me, action_Opponent, tempEnergy_Me, tempEnergy_Opponent, tempScore_Me, tempScore_Opponent);
+  int tempHealth_Me = me.health;
+  int tempHealth_Opponent = opponent.health;
+
+  const DEATH_RESULT res = RunSteps(
+                                    steps, 
+                                    action_Me, action_Opponent, 
+                                    tempEnergy_Me, tempEnergy_Opponent, 
+                                    tempScore_Me, tempScore_Opponent, 
+                                    tempHealth_Me, tempHealth_Opponent
+                                    );
 
   if (res == BOTH)
   {
@@ -611,7 +671,19 @@ void bot::SimulateAction(ACTION& action_Me, ACTION& action_Opponent, const int s
     ++action_Me.deathCount_Opponent;
   }
 
-  action_Me.scoreDiffs.push_back((tempScore_Me - tempScore_Opponent));
+  const int scoreDiff = tempScore_Me - tempScore_Opponent;
+
+  action_Me.scoreDiffs.push_back(scoreDiff);
+
+  action_Me.scoreDiffsTotal += scoreDiff;
+}
+
+//AL.
+//TODO
+//Should probably calculate this value more intelligently...
+int bot::GetStepsToSimulate()
+{
+  return map_width * 3;
 }
 
 //For each playable row, for n steps, for each of my actionable cells, 
@@ -621,11 +693,7 @@ void bot::SimulateAction(ACTION& action_Me, ACTION& action_Opponent, const int s
 //Set the best action and return.
 ERROR_CODE bot::SimulateActionableCells()
 {
-  //AL.
-  //TODO
-  //Should probably calculate this value more intelligently...
-  //int stepsToSimulate = map_width;
-  int stepsToSimulate = map_width * 3;
+  int stepsToSimulate = GetStepsToSimulate();
 
   if (maxTurns > 0)
   {

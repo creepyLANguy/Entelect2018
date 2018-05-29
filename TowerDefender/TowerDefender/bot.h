@@ -102,13 +102,15 @@ namespace bot
 
   struct ACTION
   {
-    int x = -1;
-    int y = -1;
-    BUILD_ACTION buildAction = NONE;
-    int associatedBuildCost = -1;
+    int x                     = -1;
+    int y                     = -1;
+    BUILD_ACTION buildAction  = NONE;
+    int associatedBuildCost   = -1;
+    int deathCount_Me         = 0;
+    int deathCount_Opponent   = 0;
+    double magicNumber        = 0;
+    int scoreDiffsTotal       = 0;
     vector<int> scoreDiffs;
-    int deathCount_Me = 0;
-    int deathCount_Opponent = 0;
   };
 
   struct XY
@@ -207,19 +209,30 @@ namespace bot
   void RandomiseActionableCells();
   
   ERROR_CODE SimulateActionableCells();
+  int GetStepsToSimulate();
   void SimulateAction(ACTION& action_Me, ACTION& action_Opponent, const int steps);
   int GetBuildingCostFromWaitAction(BUILD_ACTION& ba);
 
-  DEATH_RESULT RunSteps(const int steps, ACTION& action_Me, ACTION& action_Opponent, int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent);
+  
+  DEATH_RESULT RunSteps(
+    const int steps, 
+    ACTION& action_Me, ACTION& action_Opponent, 
+    int& tempEnergy_Me, int& tempEnergy_Opponent, 
+    int& tempScore_Me, int& tempScore_Opponent, 
+    int& tempHealth_Me, int& tempHealth_Opponent);
+
   int PlaceBuilding(ACTION& action, const char owner);
   void ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent);
   void SpawnMissiles();
   void MoveMissiles();
-  DEATH_RESULT ProcessHits(int& tempScore_Me, int& tempScore_Opponent);
+  DEATH_RESULT ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& tempHealth_Me, int& tempHealth_Opponent);
   void ReduceConstructionTimeLeft();
   void AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent);
   
+  //ACTION SELECTION
   void SelectBestActionFromAllActions();
+  void CalculateMagicNumbers();
+  double GetVariance(ACTION& action, const int mean);
 
   //UTILS
 #ifdef DEBUG
