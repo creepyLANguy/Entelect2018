@@ -236,7 +236,8 @@ namespace bot
 
   //UTILS
 #ifdef DEBUG
-  void PrintAllMissiles(vector<MISSILE> myMissiles);
+  void PrintAllMissiles(); 
+  void PrintAllResultingActions();
 #endif
 
 }

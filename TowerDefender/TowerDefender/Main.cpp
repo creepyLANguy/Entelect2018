@@ -228,7 +228,9 @@ void bot::SelectBestActionFromAllActions()
 
   ACTION currentAction = allResultingActions.front();
 
-
+#ifdef DEBUG
+  PrintAllResultingActions();
+#endif
 
   /*
   for (const ACTION newAction : allResultingActions)
@@ -843,14 +845,38 @@ void bot::WriteBestActionToFile()
 
 #ifdef DEBUG
 #include <iostream>
-void bot::PrintAllMissiles(vector<MISSILE> myMissiles)
+
+void bot::PrintAllMissiles()
 {
-  for (MISSILE m : myMissiles)
+  for (MISSILE m : allMissiles)
   {
     cout << m.missileOwner << "[" << m.x << "," << m.y << "]" << " ";
   }
   cout << endl << endl;
 }
+
+void bot::PrintAllResultingActions()
+{
+  for (int i = 0; i < allResultingActions.size(); ++i)
+  {
+    ACTION a = allResultingActions[i];
+
+    cout << "#" << i << "\n" 
+    << "action:" << a.buildAction << " (" << a.x << "," << a.y << ")" << "\n" 
+    << "deaths_Op: " << a.deathCount_Opponent << "\n" 
+    << "deaths_Me: " << a.deathCount_Me << "\n"
+    << "magic: " << a.magicNumber << "\n\n";
+
+    sort(a.scoreDiffs.begin(), a.scoreDiffs.end());
+    for (int sd : a.scoreDiffs)
+    {
+      cout << sd << "\n";
+    }
+    cout << endl << endl;
+  }
+  cout << endl << endl;
+}
+
 #endif
 
 /////////
