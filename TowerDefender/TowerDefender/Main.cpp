@@ -857,6 +857,7 @@ void bot::PrintAllMissiles()
 
 void bot::PrintAllResultingActions()
 {
+  string str = "";
   for (int i = 0; i < allResultingActions.size(); ++i)
   {
     ACTION a = allResultingActions[i];
@@ -867,14 +868,30 @@ void bot::PrintAllResultingActions()
     << "deaths_Me: " << a.deathCount_Me << "\n"
     << "magic: " << a.magicNumber << "\n\n";
 
+    str+= "#" + to_string(i) + "\n" 
+    + "action:" + to_string(a.buildAction) + " (" + to_string(a.x) + "," + to_string(a.y) + ")" + "\n"
+    + "deaths_Op: " + to_string(a.deathCount_Opponent) + "\n"
+    + "deaths_Me: " + to_string(a.deathCount_Me) + "\n"
+    + "magic: " + to_string(a.magicNumber) + "\n\n";
+
     sort(a.scoreDiffs.begin(), a.scoreDiffs.end());
     for (int sd : a.scoreDiffs)
     {
       cout << sd << "\n";
+
+      str += to_string(sd) + "\n";
     }
     cout << endl << endl;
+  
+    str += "\n\n";
   }
   cout << endl << endl;
+
+  str += "\n\n";
+
+  ofstream movefile("allMoves.txt");
+  movefile << str;
+  movefile.close();
 }
 
 #endif
