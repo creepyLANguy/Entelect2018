@@ -204,7 +204,8 @@ double bot::GetVariance(ACTION& action, const int averageScoreDiff)
 //Test the formula...
 void bot::CalculateMagicNumbers()
 {
-  for (int i = 0; i < allResultingActions.size(); ++i)
+  const int iters = allResultingActions.size();
+  for (int i = 0; i < iters; ++i)
   {
     ACTION action = allResultingActions[i];
 
@@ -326,7 +327,8 @@ void bot::AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempSco
 
 void bot::ReduceConstructionTimeLeft()
 {
-  for (int i = 0; i < allBuildings_SimCopy.size(); ++i)
+  const int iters = allBuildings_SimCopy.size();
+  for (int i = 0; i < iters; ++i)
   {
     --allBuildings_SimCopy[i].constructionTimeLeft;
   }
@@ -335,7 +337,8 @@ void bot::ReduceConstructionTimeLeft()
 DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& tempHealth_Me, int& tempHealth_Opponent)
 {
   //for each building, see if each missile collides.
-  for (int i_build = 0; i_build < allBuildings_SimCopy.size(); ++i_build)
+  const int iters_buildings = allBuildings_SimCopy.size();
+  for (int i_build = 0; i_build < iters_buildings; ++i_build)
   {
     BUILDING& b = allBuildings_SimCopy[i_build];
 
@@ -349,7 +352,8 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& t
       continue;
     }
 
-    for (int i_miss = 0; i_miss < allMissiles_SimCopy.size(); ++i_miss)
+    const int iters_missiles = allMissiles_SimCopy.size();
+    for (int i_miss = 0; i_miss < iters_missiles; ++i_miss)
     {
       MISSILE& m = allMissiles_SimCopy[i_miss];
 
@@ -386,7 +390,8 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& t
 
 
   //remove missiles that hit a base and reduce player health.
-  for (int im = 0; im < allMissiles_SimCopy.size(); ++im)
+  const int iters_missiles = allMissiles_SimCopy.size();
+  for (int im = 0; im < iters_missiles; ++im)
   {
     MISSILE& m = allMissiles_SimCopy[im];
 
@@ -427,7 +432,8 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& t
 
 void bot::MoveMissiles()
 {
-  for (int i = 0; i < allMissiles_SimCopy.size(); ++i)
+  const int iters = allMissiles_SimCopy.size();
+  for (int i = 0; i < iters; ++i)
   {
     MISSILE& m = allMissiles_SimCopy[i];
 
@@ -444,7 +450,8 @@ void bot::MoveMissiles()
 
 void bot::SpawnMissiles()
 {
-  for (int i = 0; i < allBuildings_SimCopy.size(); ++i)
+  const int iters = allBuildings_SimCopy.size();
+  for (int i = 0; i < iters; ++i)
   {
     BUILDING& b = allBuildings_SimCopy[i];
 
@@ -472,8 +479,8 @@ void bot::SpawnMissiles()
 
 void bot::ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent)
 {
-
-  for (int i = 0; i < allBuildings_SimCopy.size(); ++i)
+  const int iters = allBuildings_SimCopy.size();
+  for (int i = 0; i < iters; ++i)
   {
     BUILDING& b = allBuildings_SimCopy[i];
 
@@ -862,7 +869,8 @@ void bot::PrintAllMissiles()
 void bot::PrintAllResultingActions()
 {
   string str = "";
-  for (int i = 0; i < allResultingActions.size(); ++i)
+  const int iters = allResultingActions.size();
+  for (int i = 0; i < iters; ++i)
   {
     ACTION a = allResultingActions[i];
 
