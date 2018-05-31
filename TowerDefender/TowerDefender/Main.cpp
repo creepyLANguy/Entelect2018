@@ -609,10 +609,6 @@ DEATH_RESULT bot::RunSteps(
 
     if (res != NEITHER)
     {
-      //AL.
-      //TODO
-      //If we return out here, why is the vector size still 48? 
-      //Are the zeroes legit? Hmm... 
       return res;
     }
   }
