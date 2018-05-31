@@ -14,6 +14,7 @@
 #include "bot.h"
 using namespace bot;
 
+
 /////////////////
 //JSON READERS//
 ///////////////
@@ -188,6 +189,106 @@ bool bot::InitialiseFromJSON()
 //ACTION SELECTION//
 ///////////////////
 
+bool bot::SelectBestAction_OnlyOpponentDies()
+{
+  for (const ACTION runner : allResultingActions)
+  {
+    if ((runner.deathCount_Me <= 0) && (runner.deathCount_Opponent > 0))
+    {
+      bestAction = runner;
+
+      for (const ACTION comparator : allResultingActions)
+      {
+        if ((comparator.deathCount_Me <= 0) && (comparator.deathCount_Opponent > 0))
+        {
+          if (bestAction.magicNumber < comparator.magicNumber)
+          {
+            bestAction = comparator;
+          }
+        }
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool bot::SelectBestAction_NobodyDies()
+{
+  for (const ACTION runner : allResultingActions)
+  {
+    if ((runner.deathCount_Me <= 0) && (runner.deathCount_Opponent <= 0))
+    {
+      bestAction = runner;
+
+      for (const ACTION comparator : allResultingActions)
+      {
+        if ((comparator.deathCount_Me <= 0) && (comparator.deathCount_Opponent <= 0))
+        {
+          if (bestAction.magicNumber < comparator.magicNumber)
+          {
+            bestAction = comparator;
+          }
+        }
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool bot::SelectBestAction_BothOfUsDie()
+{
+  for (const ACTION runner : allResultingActions)
+  {
+    if ((runner.deathCount_Me > 0) && (runner.deathCount_Opponent > 0))
+    {
+      bestAction = runner;
+
+      for (const ACTION comparator : allResultingActions)
+      {
+        if ((comparator.deathCount_Me > 0) && (comparator.deathCount_Opponent > 0))
+        {
+          if (bestAction.magicNumber < comparator.magicNumber)
+          {
+            bestAction = comparator;
+          }
+        }
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool bot::SelectBestAction_OnlyIDie()
+{
+  for (const ACTION runner : allResultingActions)
+  {
+    if ((runner.deathCount_Me > 0) && (runner.deathCount_Opponent <= 0))
+    {
+      bestAction = runner;
+
+      for (const ACTION comparator : allResultingActions)
+      {
+        if ((comparator.deathCount_Me > 0) && (comparator.deathCount_Opponent <= 0))
+        {
+          if (bestAction.magicNumber < comparator.magicNumber)
+          {
+            bestAction = comparator;
+          }
+        }
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
 double bot::GetVariance(ACTION& action, const int averageScoreDiff)
 {
   double variance = 0;
@@ -224,69 +325,29 @@ void bot::SelectBestActionFromAllActions()
 {
   CalculateMagicNumbers();
 
-  ACTION currentAction = allResultingActions.front();
-
 #ifdef DEBUG
   PrintAllResultingActions();
 #endif
 
-  /*
-  for (const ACTION newAction : allResultingActions)
+  if (SelectBestAction_OnlyOpponentDies() == true)
   {
-
-  //Both options have same death scenarios.
-  if  (
-  (newAction.resultsInDeath_Me == currentAction.resultsInDeath_Me) &&
-  (newAction.resultsInDeath_Opponent == currentAction.resultsInDeath_Opponent)
-  )
-  {
-  //Take the action with best scorediff.
-  if (currentAction.scoreDiff > newAction.scoreDiff)
-  {
-  currentAction = newAction;
-  }
+    return;
   }
 
-  //Neither player dies.
-  else if (
-  (newAction.resultsInDeath_Me == false) &&
-  (newAction.resultsInDeath_Opponent == false)
-  )
+  if (SelectBestAction_NobodyDies() == true)
   {
-  //Take the action with best scorediff.
-  if (newAction.scoreDiff > currentAction.scoreDiff)
-  {
-  currentAction = newAction;
-  }
+    return;
   }
 
-  //Only opponent dies.
-  else if (
-  (newAction.resultsInDeath_Opponent == true) &&
-  (newAction.resultsInDeath_Me == false)
-  )
+  if (SelectBestAction_BothOfUsDie() == true)
   {
-  //Neither of us would have died, or only I would have died.
-  if  (
-  ((currentAction.resultsInDeath_Me == false) && (currentAction.resultsInDeath_Opponent == false)) ||
-  (currentAction.resultsInDeath_Me == true)
-  )
-  {
-  currentAction = newAction;
-  }
+    return;
   }
 
-  //Only I die, or we both die.
-  else
+  if (SelectBestAction_OnlyIDie() == true)
   {
-  //Ignore this action. It's shit.
-  //Self preservation FTW.
-  }
-
-  }
-  */
-
-  bestAction = currentAction;
+    return;
+  }  
 }
 
 
@@ -704,10 +765,7 @@ ERROR_CODE bot::SimulateActionableCells()
 
   //AL.
   //TODO
-  //Hmm, we should set some timers so that we don't exceed kMaxRuntimeMillis.
-  //Must return TIMEOUT if times out.
-  //
-  //ACTUALLY - Palin suggested executing the sims in parallel for a duration if time,
+  //Palin suggested executing the sims in parallel for a duration if time,
   //then choose the best action from whatever you've managed to sim in that time. 
   //
   for (const XY cell_Me : actionableCells_Me)
@@ -822,6 +880,7 @@ ERROR_CODE bot::SetBestAction()
   return er;
 }
 
+
 ////////////////
 //FILE OUTPUT//
 //////////////
@@ -844,6 +903,7 @@ void bot::WriteBestActionToFile()
   movefile << str;
   movefile.close();
 }
+
 
 //////////
 //UTILS//
@@ -904,6 +964,7 @@ void bot::PrintAllResultingActions()
 }
 
 #endif
+
 
 /////////
 //MAIN//

@@ -238,6 +238,10 @@ namespace bot
   void SelectBestActionFromAllActions();
   void CalculateMagicNumbers();
   double GetVariance(ACTION& action, const int mean);
+  bool SelectBestAction_OnlyOpponentDies();
+  bool SelectBestAction_NobodyDies();
+  bool SelectBestAction_BothOfUsDie();
+  bool SelectBestAction_OnlyIDie();
 
   //UTILS
 #ifdef DEBUG
