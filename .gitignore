@@ -24,3 +24,5 @@ TowerDefender/Release/
 *.TMP
 
 TowerDefender/TowerDefender/allMoves\.txt
+
+TowerDefender/TowerDefender/state\.json
