@@ -874,31 +874,32 @@ void bot::PrintAllResultingActions()
   {
     ACTION a = allResultingActions[i];
 
-    cout << "#" << i << "\n" 
-    << "action:" << a.buildAction << " (" << a.x << "," << a.y << ")" << "\n" 
-    << "deaths_Op: " << a.deathCount_Opponent << "\n" 
-    << "deaths_Me: " << a.deathCount_Me << "\n"
-    << "magic: " << a.magicNumber << "\n\n";
+    /*
+    cout 
+    << "#"            << i << "\n" 
+    << "action:"      << a.buildAction          << " ("   << a.x  << ","  << a.y  << ")"  << "\n" 
+    << "deaths_Op: "  << a.deathCount_Opponent  << "\n" 
+    << "deaths_Me: "  << a.deathCount_Me        << "\n"
+    << "magic: "      << a.magicNumber          << "\n\n";
+    */
 
-    str+= "#" + to_string(i) + "\n" 
-    + "action:" + to_string(a.buildAction) + " (" + to_string(a.x) + "," + to_string(a.y) + ")" + "\n"
-    + "deaths_Op: " + to_string(a.deathCount_Opponent) + "\n"
-    + "deaths_Me: " + to_string(a.deathCount_Me) + "\n"
-    + "magic: " + to_string(a.magicNumber) + "\n\n";
+    str 
+    += "#"          + to_string(i)                      + "\n" 
+    + "action:"     + to_string(a.buildAction)          + " ("  + to_string(a.x)  + ","   + to_string(a.y)  + ")"   + "\n"
+    + "deaths_Op: " + to_string(a.deathCount_Opponent)  + "\n"
+    + "deaths_Me: " + to_string(a.deathCount_Me)        + "\n"
+    + "magic: "     + to_string(a.magicNumber)          + "\n\n";
 
     sort(a.scoreDiffs.begin(), a.scoreDiffs.end());
     for (int sd : a.scoreDiffs)
     {
-      cout << sd << "\n";
-
+      //cout << sd << "\n";
       str += to_string(sd) + "\n";
     }
-    cout << endl << endl;
-  
+    //cout << endl << endl;
     str += "\n\n";
   }
-  cout << endl << endl;
-
+  //cout << endl << endl;
   str += "\n\n";
 
   ofstream movefile("allMoves.txt");
