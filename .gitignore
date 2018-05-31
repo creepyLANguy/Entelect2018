@@ -22,3 +22,5 @@ TowerDefender/TowerDefender/Release/
 TowerDefender/Release/
 
 *.TMP
+
+TowerDefender/TowerDefender/allMoves\.txt
