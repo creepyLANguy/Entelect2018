@@ -9,6 +9,7 @@
 
 #include <random>
 #include <fstream>
+#include <time.h>
 
 #include "bot.h"
 using namespace bot;
@@ -199,9 +200,6 @@ double bot::GetVariance(ACTION& action, const int averageScoreDiff)
   return variance;
 }
 
-//AL.
-//TODO
-//Test the formula...
 void bot::CalculateMagicNumbers()
 {
   for (int i = 0; i < allResultingActions.size(); ++i)
@@ -736,6 +734,12 @@ ERROR_CODE bot::SimulateActionableCells()
 
           //Reset this as it would have been changed during sim.
           action_Me.buildAction = buildAction_Me;
+
+          currentTime = clock();
+          if ((currentTime - startTime) > kMaxSimulationTime)
+          {
+            return TIMEOUT;
+          }
         }        
       }
 
@@ -810,8 +814,11 @@ ERROR_CODE bot::SetBestAction()
   //Run the sim on each actionable row and set a list of actions.
   const ERROR_CODE er = SimulateActionableCells();
   
-  SelectBestActionFromAllActions();
-
+  if (allResultingActions.size() > 0)
+  {
+    SelectBestActionFromAllActions();
+  }
+  
   return er;
 }
 
@@ -904,6 +911,8 @@ void bot::PrintAllResultingActions()
 
 int main()
 {
+  startTime = clock();
+
   if (InitialiseFromJSON() == false)
   {
     return FAIL_JSON_PARSE;

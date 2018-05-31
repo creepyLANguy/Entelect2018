@@ -123,11 +123,13 @@ namespace bot
   //CONSTANTS 
   ///////////////////////////////////////
 
-  const int kMaxRuntimeMillis   = 2000;
-  const string kStateFileName   = "state.json";
-  const string kOutputFileName  = "command.txt";
+  const int kMaxRuntimeMillis     = 2000;
+  const int kMinSelectionMillis   = 200;
+  const int kMaxSimulationTime    = (kMaxRuntimeMillis - kMinSelectionMillis);
+  const string kStateFileName     = "state.json";
+  const string kOutputFileName    = "command.txt";
   
-  int kHalfMapWidth = -1; //Yeah okay, we set this later in ReadGameDetails()...
+  int kHalfMapWidth               = -1; //Yeah okay, we set this later in ReadGameDetails()...
 
   ///////////////////////////////////////
   //MEMBERS 
@@ -188,6 +190,9 @@ namespace bot
   vector<ACTION> allResultingActions;
 
   ACTION bestAction;
+
+  clock_t startTime;
+  clock_t currentTime;
 
   ///////////////////////////////////////
   //FUNCTIONS 
