@@ -193,7 +193,7 @@ double bot::GetVariance(ACTION& action, const int averageScoreDiff)
 
   for (int scoreDiff : action.scoreDiffs)
   {
-    variance += ((scoreDiff - averageScoreDiff) * (scoreDiff - averageScoreDiff)) / action.scoreDiffs.size();
+    variance += static_cast<double>((scoreDiff - averageScoreDiff) * (scoreDiff - averageScoreDiff)) / static_cast<double>(action.scoreDiffs.size());
   }
 
   return variance;
@@ -208,7 +208,7 @@ void bot::CalculateMagicNumbers()
   {
     ACTION action = allResultingActions[i];
 
-    const int averageScoreDiff = action.scoreDiffsTotal / action.scoreDiffs.size();
+    const int averageScoreDiff = static_cast<int>(action.scoreDiffsTotal / static_cast<double>(action.scoreDiffs.size()));
     
     const double standardDeviation = sqrt(GetVariance(action, averageScoreDiff));
 
@@ -869,15 +869,17 @@ void bot::PrintAllResultingActions()
     << "deaths_Me: "  << a.deathCount_Me        << "\n"
     << "magic: "      << a.magicNumber          << "\n\n";
     */
-
-    str 
-    += "#"          + to_string(i)                      + "\n" 
-    + "action:"     + to_string(a.buildAction)          + " ("  + to_string(a.x)  + ","   + to_string(a.y)  + ")"   + "\n"
-    + "deaths_Op: " + to_string(a.deathCount_Opponent)  + "\n"
-    + "deaths_Me: " + to_string(a.deathCount_Me)        + "\n"
-    + "magic: "     + to_string(a.magicNumber)          + "\n\n";
-
     sort(a.scoreDiffs.begin(), a.scoreDiffs.end());
+
+    str
+      += "#"          + to_string(i) + "\n"
+      + "action:"     + to_string(a.buildAction) + " (" + to_string(a.x) + "," + to_string(a.y) + ")" + "\n"
+      + "deaths_Op: " + to_string(a.deathCount_Opponent) + "\n"
+      + "deaths_Me: " + to_string(a.deathCount_Me) + "\n"
+      + "tot: "       + to_string(a.scoreDiffsTotal) + "\n"
+      + "avg: "       + to_string(static_cast<int>(a.scoreDiffsTotal / static_cast<double>(a.scoreDiffs.size()))) + "\n"
+      + "magic: "     + to_string(a.magicNumber) + "\n\n";
+
     for (int sd : a.scoreDiffs)
     {
       //cout << sd << "\n";
