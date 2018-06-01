@@ -26,14 +26,12 @@ void bot::ReadGameDetails()
   map_width     = jg["mapWidth"];
   map_height    = jg["mapHeight"];
   round         = jg["round"];
+  maxTurns      = jg["maxRounds"];
   energyPerTurn = jg["roundIncomeEnergy"];
   
   kHalfMapWidth = (map_width / 2);
 
-  //AL.
-  //TODO
-  //WHAT IS THIS VALUE ?!?! 
-  //maxTurns =  
+  
 
 }
 
@@ -755,12 +753,9 @@ ERROR_CODE bot::SimulateActionableCells()
 {
   int stepsToSimulate = GetStepsToSimulate();
 
-  if (maxTurns > 0)
+  if ((round + stepsToSimulate) > maxTurns)
   {
-    if ((round + stepsToSimulate) > maxTurns)
-    {
-      stepsToSimulate = (maxTurns - round);
-    }
+    stepsToSimulate = (maxTurns - round);
   }
 
   //AL.
@@ -793,8 +788,7 @@ ERROR_CODE bot::SimulateActionableCells()
           //Reset this as it would have been changed during sim.
           action_Me.buildAction = buildAction_Me;
 
-          currentTime = clock();
-          if ((currentTime - startTime) > kMaxSimulationTime)
+          if ((clock() - startTime) > kMaxSimulationTime)
           {
             return TIMEOUT;
           }

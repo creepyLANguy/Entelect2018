@@ -192,7 +192,6 @@ namespace bot
   ACTION bestAction;
 
   clock_t startTime;
-  clock_t currentTime;
 
   ///////////////////////////////////////
   //FUNCTIONS 
