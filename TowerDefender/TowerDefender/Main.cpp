@@ -928,14 +928,6 @@ void bot::PrintAllResultingActions()
   {
     ACTION a = allResultingActions[i];
 
-    /*
-    cout 
-    << "#"            << i << "\n" 
-    << "action:"      << a.buildAction          << " ("   << a.x  << ","  << a.y  << ")"  << "\n" 
-    << "deaths_Op: "  << a.deathCount_Opponent  << "\n" 
-    << "deaths_Me: "  << a.deathCount_Me        << "\n"
-    << "magic: "      << a.magicNumber          << "\n\n";
-    */
     sort(a.scoreDiffs.begin(), a.scoreDiffs.end());
 
     str
@@ -949,13 +941,10 @@ void bot::PrintAllResultingActions()
 
     for (int sd : a.scoreDiffs)
     {
-      //cout << sd << "\n";
       str += to_string(sd) + "\n";
     }
-    //cout << endl << endl;
     str += "\n\n";
   }
-  //cout << endl << endl;
   str += "\n\n";
 
   ofstream movefile("allMoves.txt");
