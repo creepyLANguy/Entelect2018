@@ -131,6 +131,8 @@ namespace bot
   
   int kHalfMapWidth               = -1; //Yeah okay, we set this later in ReadGameDetails()...
 
+  int kStepsToSimMultiplier       = 3;
+
   ///////////////////////////////////////
   //MEMBERS 
   ///////////////////////////////////////
@@ -233,9 +235,10 @@ namespace bot
   void ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent);
   void SpawnMissiles();
   void MoveMissiles();
-  DEATH_RESULT ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& tempHealth_Me, int& tempHealth_Opponent);
+  void ProcessAllHits(int& tempScore_Me, int& tempScore_Opponent, int& tempHealth_Me, int& tempHealth_Opponent);
   void ReduceConstructionTimeLeft();
   void AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent);
+  DEATH_RESULT GetDeathResult(int& tempHealth_Me, int& tempHealth_Opponent);
   
   //ACTION SELECTION
   void SelectBestActionFromAllActions();
@@ -248,7 +251,7 @@ namespace bot
 
   //UTILS
 #ifdef DEBUG
-  void PrintAllMissiles(); 
+  void PrintAllMissiles(vector<MISSILE> missiles);
   void PrintAllResultingActions();
 #endif
 

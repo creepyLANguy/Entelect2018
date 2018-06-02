@@ -30,6 +30,7 @@ void bot::ReadGameDetails()
   energyPerTurn = jg["roundIncomeEnergy"];
   
   //AL.
+  //TODO
   energyScoreMultiplier = 1;
   healthScoreMultiplier = 15;
   //
@@ -355,6 +356,26 @@ void bot::SelectBestActionFromAllActions()
 //GAME LOGIC//
 /////////////
 
+DEATH_RESULT bot::GetDeathResult(int& tempHealth_Me, int& tempHealth_Opponent)
+{
+  if ((tempHealth_Me <= 0) && (tempHealth_Opponent <= 0))
+  {
+    return BOTH;
+  }
+
+  if (tempHealth_Me <= 0)
+  {
+    return ME;
+  }
+
+  if (tempHealth_Opponent <= 0)
+  {
+    return OPPONENT;
+  }
+
+  return NEITHER;  
+}
+
 void bot::AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent)
 {
   int energyBuildingCount_Me = 0;
@@ -391,7 +412,7 @@ void bot::ReduceConstructionTimeLeft()
   }
 }
 
-DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& tempHealth_Me, int& tempHealth_Opponent)
+void bot::ProcessAllHits(int& tempScore_Me, int& tempScore_Opponent, int& tempHealth_Me, int& tempHealth_Opponent)
 {
   //for each building, see if each missile collides.
   for (int i_build = 0; i_build < allBuildings_SimCopy.size(); ++i_build)
@@ -412,39 +433,52 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& t
     {
       MISSILE& m = allMissiles_SimCopy[i_miss];
 
-      //if a missile collides, set the building's health and remove the missile.
-      if ((b.x == m.x) && (b.y == m.y) && (b.buildingOwner != m.missileOwner))
+      for (int shifter = (m.speed-1); shifter >= 0; --shifter)
       {
-        int damageTaken = m.damage;
-        if (b.health < damageTaken)
+        int x_temp = m.x;
+        if (m.missileOwner == "A")
         {
-          damageTaken = b.health;
-        }
-
-        b.health -= damageTaken;
-
-        //adjust temp scores
-        //if (b.buildingOwner == "A")
-        if (b.x < kHalfMapWidth)
-        {
-          tempScore_Opponent += (damageTaken * b.destroyMultiplier);
+          x_temp -= shifter;
         }
         else
         {
-          tempScore_Me += (damageTaken * b.destroyMultiplier);
+          x_temp += shifter;
         }
-
-        //remove building if it's completely destroyed. 
-        if (b.health <= 0)
+        
+        //if a missile collides, set the building's health and remove the missile.
+        if ((b.x == x_temp) && (b.y == m.y) && (b.buildingOwner != m.missileOwner))
         {
-          allBuildings_SimCopy.erase(allBuildings_SimCopy.begin() + i_build);
+          int damageTaken = m.damage;
+          if (b.health < damageTaken)
+          {
+            damageTaken = b.health;
+          }
+
+          b.health -= damageTaken;
+
+          //adjust temp scores
+          //if (b.buildingOwner == "A")
+          if (b.x < kHalfMapWidth)
+          {
+            tempScore_Opponent += (damageTaken * b.destroyMultiplier);
+          }
+          else
+          {
+            tempScore_Me += (damageTaken * b.destroyMultiplier);
+          }
+
+          //remove building if it's completely destroyed. 
+          if (b.health <= 0)
+          {
+            allBuildings_SimCopy.erase(allBuildings_SimCopy.begin() + i_build);
+          }
+
+          //remove the missile.
+          allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + i_miss);
+
+          //only one missile can hit a building per turn.
+          break;
         }
-
-        //remove the missile.
-        allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + i_miss);
-
-        //only one missile can hit a building per turn.
-        break;
       }
     }
   }
@@ -483,23 +517,6 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& t
     }
   }
 
-  //flag any resulting deaths.
-  if ((tempHealth_Me <= 0) && (tempHealth_Opponent <= 0))
-  {
-    return BOTH;
-  }
-
-  if (tempHealth_Me <= 0)
-  {
-    return ME;
-  }
-
-  if (tempHealth_Opponent <= 0)
-  {
-    return OPPONENT;
-  }
-
-  return NEITHER;
 }
 
 void bot::MoveMissiles()
@@ -517,6 +534,10 @@ void bot::MoveMissiles()
       m.x += (-1 * m.speed);
     }
   }
+
+#ifdef DEBUG
+  PrintAllMissiles(allMissiles_SimCopy);
+#endif
 }
 
 void bot::SpawnMissiles()
@@ -676,7 +697,7 @@ DEATH_RESULT bot::RunSteps(
     //Each missile will hit a building if it hit it during the movement phase.
     //Also remove missiles that have left the map and destroyed buildings/missiles.
     //Don't forget to affect the scores. 
-    res = ProcessHits(tempScore_Me, tempScore_Opponent, tempHealth_Me, tempHealth_Opponent);
+    ProcessAllHits(tempScore_Me, tempScore_Opponent, tempHealth_Me, tempHealth_Opponent);
 
     //Note, this will influence the building states for the subsequent steps.
     ReduceConstructionTimeLeft(); 
@@ -684,6 +705,8 @@ DEATH_RESULT bot::RunSteps(
     //Energy will be awarded, based on the baseline amount received and the number of energy buildings a player has.
     AwardEnergy(tempEnergy_Me, tempEnergy_Opponent, tempScore_Me, tempScore_Opponent);
 
+    //flag any resulting deaths.
+    res = GetDeathResult(tempHealth_Me, tempHealth_Opponent);
     if (res != NEITHER)
     {
       return res;
@@ -761,7 +784,7 @@ void bot::SimulateAction(ACTION& action_Me, ACTION& action_Opponent, const int s
 //Should probably calculate this value more intelligently...
 int bot::GetStepsToSimulate()
 {
-  return map_width * 3;
+  return map_width * kStepsToSimMultiplier;
 }
 
 //For each playable row, for n steps, for each of my actionable cells, 
@@ -926,9 +949,9 @@ void bot::WriteBestActionToFile()
 #ifdef DEBUG
 #include <iostream>
 
-void bot::PrintAllMissiles()
+void bot::PrintAllMissiles(vector<MISSILE> missiles)
 {
-  for (MISSILE m : allMissiles)
+  for (MISSILE m : missiles)
   {
     cout << m.missileOwner << "[" << m.x << "," << m.y << "]" << " ";
   }
