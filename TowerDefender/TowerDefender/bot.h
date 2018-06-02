@@ -163,12 +163,16 @@ namespace bot
   char* constructedCharacter_energy         = "E";
   char* underConstructionCharacter_energy   = "e";
 
-  int energyPerTurn   = 5;
 
-  int map_width       = -1;
-  int map_height      = -1;
-  int maxTurns        = -1;
-  int round           = -1;
+  int map_width                             = -1;
+  int map_height                            = -1;
+  int maxTurns                              = -1;
+  int round                                 = -1;
+  int energyPerTurn                         = -1;
+
+  int energyScoreMultiplier                 = -1;
+  int healthScoreMultiplier                 = -1;
+
 
   json j = nullptr;
 

@@ -29,10 +29,12 @@ void bot::ReadGameDetails()
   maxTurns      = jg["maxRounds"];
   energyPerTurn = jg["roundIncomeEnergy"];
   
+  //AL.
+  energyScoreMultiplier = 1;
+  healthScoreMultiplier = 15;
+  //
+
   kHalfMapWidth = (map_width / 2);
-
-  
-
 }
 
 void bot::ReadBuildingStats()
@@ -413,17 +415,23 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& t
       //if a missile collides, set the building's health and remove the missile.
       if ((b.x == m.x) && (b.y == m.y) && (b.buildingOwner != m.missileOwner))
       {
-        b.health -= m.damage;
+        int damageTaken = m.damage;
+        if (b.health < damageTaken)
+        {
+          damageTaken = b.health;
+        }
+
+        b.health -= damageTaken;
 
         //adjust temp scores
         //if (b.buildingOwner == "A")
         if (b.x < kHalfMapWidth)
         {
-          tempScore_Opponent += m.damage;
+          tempScore_Opponent += (damageTaken * b.destroyMultiplier);
         }
         else
         {
-          tempScore_Me += m.damage;
+          tempScore_Me += (damageTaken * b.destroyMultiplier);
         }
 
         //remove building if it's completely destroyed. 
@@ -447,17 +455,29 @@ DEATH_RESULT bot::ProcessHits(int& tempScore_Me, int& tempScore_Opponent, int& t
   {
     MISSILE& m = allMissiles_SimCopy[im];
 
+    int damageTaken = m.damage;
+
     if (m.x < 0)
     {
-      tempHealth_Me -= m.damage;
-      tempScore_Opponent += (m.damage * 100);
+      if (tempHealth_Me < damageTaken)
+      {
+        damageTaken = tempHealth_Me;
+      }
+
+      tempHealth_Me -= damageTaken;
+      tempScore_Opponent += (damageTaken  * healthScoreMultiplier);
 
       allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + im);
     }
     else if (m.x >= map_width)
     {
-      tempHealth_Opponent -= m.damage;
-      tempScore_Me += (m.damage * 100);
+      if (tempHealth_Opponent < damageTaken)
+      {
+        damageTaken = tempHealth_Me;
+      }
+
+      tempHealth_Opponent -= damageTaken;
+      tempScore_Me += (damageTaken * healthScoreMultiplier);
 
       allMissiles_SimCopy.erase(allMissiles_SimCopy.begin() + im);
     }
