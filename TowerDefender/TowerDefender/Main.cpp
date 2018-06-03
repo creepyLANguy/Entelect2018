@@ -831,10 +831,12 @@ ERROR_CODE bot::SimulateActionableCells()
           //Reset this as it would have been changed during sim.
           action_Me.buildAction = buildAction_Me;
 
+#ifndef DEBUG
           if ((clock() - startTime) > kMaxSimulationTime)
           {
             return TIMEOUT;
           }
+#endif
         }        
       }
 
