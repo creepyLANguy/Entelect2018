@@ -1,0 +1,1 @@
+C:\MinGW\bin\g++.exe -Wall -O2 Main.cpp bot.h -o zelig.exe
