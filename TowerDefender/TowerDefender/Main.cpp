@@ -310,7 +310,12 @@ void bot::CalculateMagicNumbers()
 
     const int averageScoreDiff = static_cast<int>(action.scoreDiffsTotal / static_cast<double>(action.scoreDiffs.size()));
     
-    const double standardDeviation = sqrt(GetVariance(action, averageScoreDiff));
+    double standardDeviation = 1;
+    const double variance = GetVariance(action, averageScoreDiff);
+    if (variance > 0)
+    {
+      standardDeviation = sqrt(variance);
+    }
 
     double deathQuotient = 1;
     if ((action.deathCount_Opponent > 0) && (action.deathCount_Me > 0))
