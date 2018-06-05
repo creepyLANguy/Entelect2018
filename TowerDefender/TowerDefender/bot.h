@@ -131,7 +131,7 @@ namespace bot
   
   int kHalfMapWidth               = -1; //Yeah okay, we set this later in ReadGameDetails()...
 
-  int kStepsToSimMultiplier       = 3;
+  int kStepsToSimMultiplier = 2;
 
   ///////////////////////////////////////
   //MEMBERS 

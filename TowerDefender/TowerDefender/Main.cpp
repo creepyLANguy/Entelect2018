@@ -14,7 +14,6 @@
 #include "bot.h"
 using namespace bot;
 
-
 /////////////////
 //JSON READERS//
 ///////////////
@@ -29,7 +28,6 @@ void bot::ReadGameDetails()
   maxTurns      = jg["maxRounds"];
   energyPerTurn = jg["roundIncomeEnergy"];
   
-  //AL.
   //TODO
   energyScoreMultiplier = 1;
   healthScoreMultiplier = 15;
@@ -332,6 +330,7 @@ void bot::SelectBestActionFromAllActions()
   CalculateMagicNumbers();
 
 #ifdef DEBUG
+  //AL.
   PrintAllResultingActions();
 #endif
 
@@ -541,7 +540,8 @@ void bot::MoveMissiles()
   }
 
 #ifdef DEBUG
-  PrintAllMissiles(allMissiles_SimCopy);
+  //AL.
+  //PrintAllMissiles(allMissiles_SimCopy);
 #endif
 }
 
@@ -784,7 +784,6 @@ void bot::SimulateAction(ACTION& action_Me, ACTION& action_Opponent, const int s
   action_Me.scoreDiffsTotal += scoreDiff;
 }
 
-//AL.
 //TODO
 //Should probably calculate this value more intelligently...
 int bot::GetStepsToSimulate()
@@ -806,7 +805,6 @@ ERROR_CODE bot::SimulateActionableCells()
     stepsToSimulate = (maxTurns - round);
   }
 
-  //AL.
   //TODO
   //Palin suggested executing the sims in parallel for a duration if time,
   //then choose the best action from whatever you've managed to sim in that time. 
@@ -946,6 +944,15 @@ void bot::WriteBestActionToFile()
   ofstream movefile(kOutputFileName);
   movefile << str;
   movefile.close();
+
+//#ifdef DEBUG
+  //AL.
+  ofstream movesHistoryFile; 
+  movesHistoryFile.open("movesHistory.txt", ios_base::app);
+  movesHistoryFile << str;
+  movesHistoryFile << '\n';
+  movesHistoryFile.close();
+//#endif
 }
 
 
