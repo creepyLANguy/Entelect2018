@@ -941,14 +941,14 @@ void bot::WriteBestActionToFile()
   movefile << str;
   movefile.close();
 
-#ifdef DEBUG
+//#ifdef DEBUG
   //AL.
   ofstream movesHistoryFile; 
   movesHistoryFile.open("movesHistory.txt", ios_base::app);
   movesHistoryFile << str;
   movesHistoryFile << '\n';
   movesHistoryFile.close();
-#endif
+//#endif
 }
 
 
