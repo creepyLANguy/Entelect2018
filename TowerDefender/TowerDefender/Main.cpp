@@ -65,26 +65,22 @@ void bot::ReadBuildingStats()
 
 void bot::ReadPlayerDetails()
 {
+  int myJsonIndex = 0;
+  int opponentJsonIndex = 1;
+  const string playerType = j["players"][myJsonIndex]["playerType"].get<string>();
+  if (playerType != "A")
   {
-    /*
-    int myJsonIndex = 0;
-    int opponentJsonIndex = 1;
-    const string playerType = j["players"][myJsonIndex]["playerType"].get<string>();
-    if (playerType != "A")
-    {
-      myJsonIndex = 1;
-      opponentJsonIndex = 0;
-    }
-    */
+    myJsonIndex = 1;
+    opponentJsonIndex = 0;
   }
-
-  json jm             = j["players"][0];//myJsonIndex];
+  
+  json jm             = j["players"][myJsonIndex];
   me.energy           = jm["energy"];
   me.health           = jm["health"];
   me.hitsTaken        = jm["hitsTaken"];
   me.score            = jm["score"];
 
-  json jo             = j["players"][1];//opponentJsonIndex];
+  json jo             = j["players"][opponentJsonIndex];
   opponent.energy     = jo["energy"];
   opponent.health     = jo["health"];
   opponent.hitsTaken  = jo["hitsTaken"];
@@ -945,14 +941,14 @@ void bot::WriteBestActionToFile()
   movefile << str;
   movefile.close();
 
-//#ifdef DEBUG
+#ifdef DEBUG
   //AL.
   ofstream movesHistoryFile; 
   movesHistoryFile.open("movesHistory.txt", ios_base::app);
   movesHistoryFile << str;
   movesHistoryFile << '\n';
   movesHistoryFile.close();
-//#endif
+#endif
 }
 
 
