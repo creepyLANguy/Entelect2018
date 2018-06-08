@@ -968,8 +968,19 @@ void bot::PrintAllMissiles(vector<MISSILE> missiles)
   cout << endl << endl;
 }
 
+struct greater_than_key
+{
+  inline bool operator() (const ACTION& a1, const ACTION& a2)
+  {
+    return (a1.magicNumber > a2.magicNumber);
+  }
+};
+
 void bot::PrintAllResultingActions()
 {
+
+  sort(allResultingActions.begin(), allResultingActions.end(), greater_than_key());
+
   string str = "";
   for (int i = 0; i < allResultingActions.size(); ++i)
   {
