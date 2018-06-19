@@ -11,6 +11,8 @@
 #include <fstream>
 #include <time.h>
 
+#include <iostream>
+
 #include "bot.h"
 using namespace bot;
 
@@ -323,12 +325,15 @@ void bot::CalculateMagicNumbers()
 
 void bot::SelectBestActionFromAllActions()
 {
+  LOG("SelectBestActionFromAllActions()");
+
   CalculateMagicNumbers();
 
-#ifdef DEBUG
   //AL.
+#ifdef DEBUG
   PrintAllResultingActions();
 #endif
+  //
 
   if (SelectBestAction_OnlyOpponentDies() == true)
   {
@@ -358,6 +363,8 @@ void bot::SelectBestActionFromAllActions()
 
 DEATH_RESULT bot::GetDeathResult(int& tempHealth_Me, int& tempHealth_Opponent)
 {
+  LOG("GetDeathResult()");
+
   if ((tempHealth_Me <= 0) && (tempHealth_Opponent <= 0))
   {
     return BOTH;
@@ -378,6 +385,8 @@ DEATH_RESULT bot::GetDeathResult(int& tempHealth_Me, int& tempHealth_Opponent)
 
 void bot::AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempScore_Me, int& tempScore_Opponent)
 {
+  LOG("AwardEnergy()");
+
   int energyBuildingCount_Me = 0;
   int energyBuildingCount_Opponent = 0;
 
@@ -406,6 +415,8 @@ void bot::AwardEnergy(int& tempEnergy_Me, int& tempEnergy_Opponent, int& tempSco
 
 void bot::ReduceConstructionTimeLeft()
 {
+  LOG("ReduceConstructionTimeLeft()");
+
   for (int i = 0; i < allBuildings_SimCopy.size(); ++i)
   {
     --allBuildings_SimCopy[i].constructionTimeLeft;
@@ -414,6 +425,8 @@ void bot::ReduceConstructionTimeLeft()
 
 void bot::ProcessAllHits(int& tempScore_Me, int& tempScore_Opponent, int& tempHealth_Me, int& tempHealth_Opponent)
 {
+  LOG("ProcessAllHits()");
+
   //for each building, see if each missile collides.
   for (int i_build = 0; i_build < allBuildings_SimCopy.size(); ++i_build)
   {
@@ -521,6 +534,15 @@ void bot::ProcessAllHits(int& tempScore_Me, int& tempScore_Opponent, int& tempHe
 
 void bot::MoveMissiles()
 {
+  LOG("MoveMissiles()");
+
+	//AL.
+#ifdef DEBUG
+	cout << "BEFORE:\n\n"
+	PrintAllMissiles(allMissiles_SimCopy);
+#endif
+	//
+
   for (int i = 0; i < allMissiles_SimCopy.size(); ++i)
   {
     MISSILE& m = allMissiles_SimCopy[i];
@@ -535,14 +557,18 @@ void bot::MoveMissiles()
     }
   }
 
-#ifdef DEBUG
   //AL.
-  //PrintAllMissiles(allMissiles_SimCopy);
+#ifdef DEBUG
+  cout << "AFTER:\n\n"
+  PrintAllMissiles(allMissiles_SimCopy);
 #endif
+  //
 }
 
 void bot::SpawnMissiles()
 {
+  LOG("SpawnMissiles()");
+
   for (int i = 0; i < allBuildings_SimCopy.size(); ++i)
   {
     BUILDING& b = allBuildings_SimCopy[i];
@@ -571,6 +597,8 @@ void bot::SpawnMissiles()
 
 void bot::ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent)
 {
+  LOG("ConstructBuildings()");
+
   for (int i = 0; i < allBuildings_SimCopy.size(); ++i)
   {
     BUILDING& b = allBuildings_SimCopy[i];
@@ -610,6 +638,8 @@ void bot::ConstructBuildings(int& tempScore_Me, int& tempScore_Opponent)
 
 int bot::PlaceBuilding(ACTION& action, const char owner)
 {
+  LOG("PlaceBuilding()");
+
   BUILDING b;
   b.buildingOwner = owner;
   b.x             = action.x;
@@ -662,6 +692,8 @@ DEATH_RESULT bot::RunSteps(
   int& tempScore_Me, int& tempScore_Opponent, 
   int& tempHealth_Me, int& tempHealth_Opponent)
 {
+  LOG("RunSteps()");
+
   DEATH_RESULT res = NEITHER;
 
   for (int i = 0; i < steps; ++i)
@@ -710,15 +742,19 @@ DEATH_RESULT bot::RunSteps(
     res = GetDeathResult(tempHealth_Me, tempHealth_Opponent);
     if (res != NEITHER)
     {
+      LOG("EARLY RETURN (DEATH RESULT)");
       return res;
     }
   }
 
+  LOG("return from RunSteps()");
   return res;
 }
 
 int bot::GetBuildingCostFromWaitAction(BUILD_ACTION& ba)
 {
+  LOG("GetBuildingCostFromWaitAction()");
+
   if (ba == WAIT_ATTACK)
   {
     return cost_attack;
@@ -794,6 +830,8 @@ int bot::GetStepsToSimulate()
 //Set the best action and return.
 ERROR_CODE bot::SimulateActionableCells()
 {
+  LOG("SimulateActionableCells()");
+
   int stepsToSimulate = GetStepsToSimulate();
 
   if ((round + stepsToSimulate) > maxTurns)
@@ -801,14 +839,26 @@ ERROR_CODE bot::SimulateActionableCells()
     stepsToSimulate = (maxTurns - round);
   }
 
+  LOG("GOT STEPS TO SIM : " + to_string(stepsToSimulate));
+
   //TODO
   //Palin suggested executing the sims in parallel for a duration if time,
   //then choose the best action from whatever you've managed to sim in that time. 
   //
   for (const XY cell_Me : actionableCells_Me)
   {
+    string myMove = "SIM ALL MOVES FOR MY ACTIONABLE CELL : ";
+    myMove += "(";
+    myMove += to_string(cell_Me.x);
+    myMove += ",";
+    myMove += to_string(cell_Me.y);
+    myMove += ")";
+    LOG(myMove.c_str());
+
     for (BUILD_ACTION buildAction_Me : possibleBuildActions_Me)
     {
+      LOG("SIMING ACTION : " + to_string(buildAction_Me));
+
       ACTION action_Me;
       action_Me.x                   = cell_Me.x;
       action_Me.y                   = cell_Me.y;
@@ -817,8 +867,18 @@ ERROR_CODE bot::SimulateActionableCells()
 
       for (const XY cell_Opponent : actionableCells_Opponent)
       {
+        string opMove = "SIM MY BUILDACTION AT CURRENT CELL AGAINST ALL OPPONENT ACTIONS AT CELL : ";
+        opMove += "(";
+        opMove += to_string(cell_Opponent.x);
+        opMove += ",";
+        opMove += to_string(cell_Opponent.y);
+        opMove += ")";
+        LOG(opMove.c_str());
+
         for (BUILD_ACTION buildAction_Opponent : possibleBuildActions_Opponent)
         {
+          LOG("OPPONENT ACTION : " + to_string(buildAction_Opponent));
+
           ACTION action_Opponent;
           action_Opponent.x                   = cell_Opponent.x;
           action_Opponent.y                   = cell_Opponent.y;
@@ -826,6 +886,7 @@ ERROR_CODE bot::SimulateActionableCells()
           action_Opponent.associatedBuildCost = GetBuildingCostFromWaitAction(action_Opponent.buildAction);
 
           SimulateAction(action_Me, action_Opponent, stepsToSimulate);
+          LOG("SINGLE ACTION SIM'D");
 
           //Reset this as it would have been changed during sim.
           action_Me.buildAction = buildAction_Me;
@@ -833,6 +894,7 @@ ERROR_CODE bot::SimulateActionableCells()
 #ifndef DEBUG
           if ((clock() - startTime) > kMaxSimulationTime)
           {
+            LOG("!!!===!!!===TIMEOUT===!!!===!!!");
             return TIMEOUT;
           }
 #endif
@@ -840,9 +902,11 @@ ERROR_CODE bot::SimulateActionableCells()
       }
 
       allResultingActions.push_back(action_Me);
+      LOG("PUSH MY ACTION AFTER SUCCESSFUL SIM ON THIS CELL");
     }
   }
 
+  LOG("ALL SIMULATED OKAY!");
   return OKAY;
 }
 
@@ -889,7 +953,8 @@ ERROR_CODE bot::SetBestAction()
 {
   if (actionableCells_Me.size() == 0)
   {
-    return FAIL_CANT_PLAY;
+    LOG("NO ACTIONABLE CELLS");
+    return CANT_PLAY;
   }
 
   bestAction.buildAction = NONE;
@@ -900,12 +965,14 @@ ERROR_CODE bot::SetBestAction()
 
   if (possibleBuildActions_Me.size() == 0)
   {
-    return FAIL_CANT_PLAY;
+    LOG("NO MOVES ACTIONS FOR ME TO TAKE");
+    return CANT_PLAY;
   }
 
   //Randomise order of actionable rows so bot isn't too predictable 
   //Helps if cannot simulate all rows and bot stops at same point each turn.
   RandomiseActionableCells();
+  LOG("RANDOMISED BOTH PLAYERS' ACTIONABLE CELLS");
 
   //Run the sim on each actionable row and set a list of actions.
   const ERROR_CODE er = SimulateActionableCells();
@@ -925,6 +992,8 @@ ERROR_CODE bot::SetBestAction()
 
 void bot::WriteBestActionToFile()
 {
+  LOG("WriteBestActionToFile()");
+
   string str = "";
 
   if (bestAction.buildAction > NONE)
@@ -941,23 +1010,22 @@ void bot::WriteBestActionToFile()
   movefile << str;
   movefile.close();
 
-//#ifdef DEBUG
+  LOG(str);
+
+#ifdef DEBUG
   //AL.
   ofstream movesHistoryFile; 
   movesHistoryFile.open("movesHistory.txt", ios_base::app);
   movesHistoryFile << str;
   movesHistoryFile << '\n';
   movesHistoryFile.close();
-//#endif
+#endif
 }
 
 
 //////////
 //UTILS//
 ////////
-
-#ifdef DEBUG
-#include <iostream>
 
 void bot::PrintAllMissiles(vector<MISSILE> missiles)
 {
@@ -970,7 +1038,7 @@ void bot::PrintAllMissiles(vector<MISSILE> missiles)
 
 struct greater_than_key
 {
-  inline bool operator() (const ACTION& a1, const ACTION& a2)
+  inline bool operator() (const ACTION& a1, const ACTION& a2) const
   {
     return (a1.magicNumber > a2.magicNumber);
   }
@@ -1010,8 +1078,12 @@ void bot::PrintAllResultingActions()
   movefile.close();
 }
 
-#endif
-
+void bot::LOG(string msg)
+{
+//#ifdef DEBUG
+  cout << msg.c_str() << endl;
+//#endif
+}
 
 /////////
 //MAIN//
@@ -1021,14 +1093,23 @@ int main()
 {
   startTime = clock();
 
+  LOG("BEGIN");
+
   if (InitialiseFromJSON() == false)
   {
+    LOG("FAILED TO INIT FROM JSON STATE");
     return FAIL_JSON_PARSE;
   }
 
   const ERROR_CODE er = SetBestAction();
 
   WriteBestActionToFile();
+
+  LOG("END WITH CODE : " + to_string(er));
+  if (er >= OKAY)
+  {
+    return OKAY;
+  }
 
   return er;
 }

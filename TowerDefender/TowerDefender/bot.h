@@ -38,8 +38,8 @@ namespace bot
   enum ERROR_CODE
   {
     FAIL_JSON_PARSE = -1,
-    FAIL_CANT_PLAY  = 0,
-    OKAY            = 1,
+    OKAY            = 0,
+    CANT_PLAY       = 1,
     TIMEOUT         = 2,
   };
 
@@ -123,7 +123,7 @@ namespace bot
   //CONSTANTS 
   ///////////////////////////////////////
 
-  const int kMaxRuntimeMillis     = 2000;
+  const int kMaxRuntimeMillis     = 1700;
   const int kMinSelectionMillis   = 200;
   const int kMaxSimulationTime    = (kMaxRuntimeMillis - kMinSelectionMillis);
   const string kStateFileName     = "state.json";
@@ -250,11 +250,9 @@ namespace bot
   bool SelectBestAction_OnlyIDie();
 
   //UTILS
-#ifdef DEBUG
   void PrintAllMissiles(vector<MISSILE> missiles);
   void PrintAllResultingActions();
-#endif
-
+  void LOG(string msg);
 }
 
 #endif // BOT_H
