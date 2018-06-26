@@ -894,7 +894,8 @@ ERROR_CODE bot::SimulateActionableCells()
 #ifndef DEBUG
           if ((clock() - startTime) > kMaxSimulationTime)
           {
-            LOG("!!!===!!!===TIMEOUT===!!!===!!!");
+            LOG("!!!TIMEOUT!!!");
+            allResultingActions.push_back(action_Me);
             return TIMEOUT;
           }
 #endif
@@ -981,6 +982,10 @@ ERROR_CODE bot::SetBestAction()
   {
     SelectBestActionFromAllActions();
   }
+  else
+  {
+    LOG("NO ACTIONS!!!");
+  }
   
   return er;
 }
@@ -1010,7 +1015,7 @@ void bot::WriteBestActionToFile()
   movefile << str;
   movefile.close();
 
-  LOG(str);
+  LOG("MOVE: " + str);
 
 #ifdef DEBUG
   //AL.
