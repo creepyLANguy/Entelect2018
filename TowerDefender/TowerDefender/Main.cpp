@@ -329,11 +329,9 @@ void bot::SelectBestActionFromAllActions()
 
   CalculateMagicNumbers();
 
-  //AL.
 #ifdef DEBUG
   PrintAllResultingActions();
 #endif
-  //
 
   if (SelectBestAction_OnlyOpponentDies() == true)
   {
@@ -536,12 +534,10 @@ void bot::MoveMissiles()
 {
   LOG("MoveMissiles()");
 
-	//AL.
 #ifdef DEBUG
 	cout << "BEFORE:\n\n"
 	PrintAllMissiles(allMissiles_SimCopy);
 #endif
-	//
 
   for (int i = 0; i < allMissiles_SimCopy.size(); ++i)
   {
@@ -557,12 +553,10 @@ void bot::MoveMissiles()
     }
   }
 
-  //AL.
 #ifdef DEBUG
   cout << "AFTER:\n\n"
   PrintAllMissiles(allMissiles_SimCopy);
 #endif
-  //
 }
 
 void bot::SpawnMissiles()
@@ -1017,14 +1011,14 @@ void bot::WriteBestActionToFile()
 
   LOG("MOVE: " + str);
 
-#ifdef DEBUG
-  //AL.
+//AL.
+//#ifdef DEBUG
   ofstream movesHistoryFile; 
   movesHistoryFile.open("movesHistory.txt", ios_base::app);
   movesHistoryFile << str;
   movesHistoryFile << '\n';
   movesHistoryFile.close();
-#endif
+//#endif
 }
 
 
@@ -1085,9 +1079,9 @@ void bot::PrintAllResultingActions()
 
 void bot::LOG(string msg)
 {
-//#ifdef DEBUG
+#ifdef DEBUG
   cout << msg.c_str() << endl;
-//#endif
+#endif
 }
 
 /////////
